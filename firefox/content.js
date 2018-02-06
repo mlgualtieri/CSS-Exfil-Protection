@@ -13,17 +13,25 @@ function scan_css()
         {
             // Retrieve and parse cross domain stylesheet
             //console.log("Cross domain stylesheet: "+ sheets[i].href);
+            incrementSanitize();
             getCrossDomainCSS(sheets[i]);
         }
         else
         {
+            incrementSanitize();
             handleImportedCSS(rules);
 
             // Parse origin stylesheet
             //console.log("DOM stylesheet...");
             var _selectors = parseCSSRules(rules);
             filter_css(_selectors[0], _selectors[1]);
-            enableCSS(sheets[i]);
+
+            if(checkCSSDisabled(sheets[i]))
+            {
+                enableCSS(sheets[i]);
+            }
+
+            decrementSanitize();
         }
 	}
 }
@@ -37,6 +45,9 @@ function handleImportedCSS(rules)
     {
         if( Object.prototype.toString.call(rules[r]) == "[object CSSImportRule]")
         {
+            // Adding new sheet to the list
+            incrementSanitize();
+
             // Found an imported CSS Stylesheet
             //console.log("Imported CSS...");
 
@@ -45,7 +56,7 @@ function handleImportedCSS(rules)
             {
                 // Parse imported cross domain sheet
                 //console.log("Imported Cross Domain CSS...");
-                disableCSS(rules[r].styleSheet);
+                //disableCSS(rules[r].styleSheet);
                 getCrossDomainCSS(rules[r].styleSheet);
             }
             else
@@ -54,6 +65,7 @@ function handleImportedCSS(rules)
                 //console.log("Imported DOM CSS...");
                 var _selectors = parseCSSRules(_rules);
                 filter_css(_selectors[0], _selectors[1]);
+                decrementSanitize();
             }
         }
     }
@@ -115,10 +127,21 @@ function parseCSSRules(rules)
                 ( (cssText.indexOf('url') !== -1) && ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) ) )
               )
             {
-                console.log("CSS Exfil Protection blocked: "+ rules[r].selectorText);
+                //console.log("CSS Exfil Protection blocked: "+ rules[r].selectorText);
                 selectors.push(rules[r].selectorText);
                 selectorcss.push(cssText);
             }
+        }
+    }
+
+    // Check if any bad rules were found
+    // if yes, temporarily disable stylesheet
+    if (selectors[0] != null)
+    {
+        //console.log("Found potentially malicious selectors!");
+        if(rules[0] != null)
+        {
+            disableCSS(rules[0].parentStyleSheet);
         }
     }
 
@@ -143,6 +166,7 @@ function filter_css(selectors, selectorcss)
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
         }
+        console.log("CSS Exfil Protection blocked: "+ selectors[s]);
     }
 }
 
@@ -191,7 +215,11 @@ function getCrossDomainCSS(orig_sheet)
                         sheet.disabled = true;
                         sheet.parentNode.removeChild(sheet);
     
-                        enableCSS(orig_sheet);
+                        if(checkCSSDisabled(orig_sheet))
+                        {
+                            enableCSS(orig_sheet);
+                        }
+                        decrementSanitize();
                         return rules;
                     }
 
@@ -208,7 +236,11 @@ function getCrossDomainCSS(orig_sheet)
                 sheet.disabled = true;
                 sheet.parentNode.removeChild(sheet);
 
-                enableCSS(orig_sheet);
+                if(checkCSSDisabled(orig_sheet))
+                {
+                    enableCSS(orig_sheet);
+                }
+                decrementSanitize();
                 return rules;
             }
         }
@@ -231,6 +263,37 @@ function enableCSS(_sheet)
     // Some sites like news.google.com require a resize event to properly render all elements after re-enabling CSS
     window.dispatchEvent(new Event('resize'));
 }
+function checkCSSDisabled(_sheet)
+{
+    return _sheet.disabled;
+}
+function disableAndRemoveCSS(_sheet)
+{
+    _sheet.disabled = true;
+    _sheet.parentNode.removeChild(_sheet);
+}
+
+
+function incrementSanitize()
+{
+    sanitize_inc++;
+    //console.log("Increment: "+ sanitize_inc);
+}
+function decrementSanitize()
+{
+    sanitize_inc--;
+    if(sanitize_inc <= 0)
+    {
+        disableAndRemoveCSS(css_load_blocker);
+    }
+    //console.log("Decrement: "+ sanitize_inc);
+}
+
+function buildContentLoadBlockerCSS()
+{
+    var csstext = "input,input ~ * { background-image:none !important; list-style: inherit !important; cursor: auto !important;}";
+    return csstext;
+}
 
 
 
@@ -239,19 +302,19 @@ function enableCSS(_sheet)
  *  Initialize
  */
 
-// Create stylesheet which will contain our override styles
-var filter_sheet = null;
-
-// Create temporary stylesheet that will block speculative prefetch of CSS backgrounds
-var css_load_blocker  = document.createElement('style');
-css_load_blocker.innerText = "html { display:none !important; }";
-document.head.appendChild(css_load_blocker);
-
+var filter_sheet      = null;   // Create stylesheet which will contain our override styles
+var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading of resources we may block
+var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
 
 
 // Run as soon as the DOM has been loaded
 window.addEventListener("DOMContentLoaded", function() {
 
+    // Create temporary stylesheet that will block early loading of resources we may want to block
+    css_load_blocker  = document.createElement('style');
+    css_load_blocker.innerText = buildContentLoadBlockerCSS();
+    css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
+    document.head.appendChild(css_load_blocker);
 
     browser.storage.local.get({
         enable_plugin: 1
@@ -261,19 +324,12 @@ window.addEventListener("DOMContentLoaded", function() {
         {
             // Plugin is enabled
 
-            // Diable all stylesheets to prevent prefetch of CSS backgrounds and remove blocker sheet
-	        var sheets = document.styleSheets;
-            for (var i=0; i < sheets.length; i++) 
-	        {
-                //console.log("Disable CSS index["+ i + "] href:" + sheets[i].href);
-                disableCSS(sheets[i]);
-            }
-            css_load_blocker.disabled = true;
-            css_load_blocker.parentNode.removeChild(css_load_blocker);
-
             // Create stylesheet that will contain our filtering CSS (if any is necessary)
             filter_sheet = document.createElement('style');
+            filter_sheet.className = "__css_exfil_protection_filtered_styles";
+            filter_sheet.innerText = "";
             document.head.appendChild(filter_sheet);
+
             scan_css();
         }
         else
