@@ -1,0 +1,43 @@
+{
+  "manifest_version": 2,
+ 
+  "name": "CSS Exfil Protection",
+  "version": "1.0.0",
+  "description": "Guard against CSS data exfiltration attacks.",
+
+  "content_security_policy": "script-src 'self'; object-src 'self'; style-src 'self'",
+
+  "permissions": [
+    "http://*/",
+    "https://*/",
+    "storage"
+  ],
+
+  "homepage_url": "https://www.mike-gualtieri.com/css-exfil-vulnerability-tester",
+  "icons": { 
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "64": "icons/icon-64.png",
+      "128": "icons/icon-128.png" 
+  },
+
+  "browser_action": {
+      "default_icon": {
+          "48": "icons/icon-48.png"
+      },
+      "default_popup": "popup.html"
+  },
+
+  "options_ui": {
+     "page": "popup.html",
+     "chrome_style": true
+  },
+
+  "content_scripts": [{
+    "js": ["content.js"],
+    "matches": ["<all_urls>"],
+    "run_at": "document_start"
+  }]
+ 
+}

@@ -1,0 +1,54 @@
+body {
+  cursor: default;
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-top: 0;
+  margin-bottom: 1em;
+  min-width: 20em;
+  font-family: 'Lucida Grande', 'Segoe UI', Tahoma, 'DejaVu Sans', Arial, sans-serif;
+  font-size: 75%;
+  color: #303942;
+}
+
+h1 {
+  user-select: none;
+  font-weight: normal;
+  line-height: 1;
+  font-size: 1.5em;
+  white-space: nowrap;
+}
+h6 {
+    font-weight:normal;
+}
+
+.no_margin_padding_bottom {
+    margin-bottom:0;
+}
+.version {
+    margin-top:3px;
+}
+
+a {
+  color: #15c;
+  text-decoration: underline;
+}
+
+a:active {
+  color: #052577;
+}
+
+input[type='checkbox'] {
+  vertical-align: middle;
+  cursor:pointer;
+}
+
+footer {
+  border-top: 1px solid #eee;
+  margin-top: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+label {
+    cursor:pointer;
+}
