@@ -330,6 +330,9 @@ window.addEventListener("DOMContentLoaded", function() {
             filter_sheet.innerText = "";
             document.head.appendChild(filter_sheet);
 
+            // Increment once before we scan, just in case decrement is called too quickly
+            incrementSanitize();
+
             scan_css();
         }
         else
@@ -337,6 +340,23 @@ window.addEventListener("DOMContentLoaded", function() {
             // Plugin is disabled... enable page without sanitizing
             css_load_blocker.disabled = true;
             css_load_blocker.parentNode.removeChild(css_load_blocker);
+        }
+    });
+
+}, false);
+
+
+
+window.addEventListener("load", function() {
+
+    chrome.storage.local.get({
+        enable_plugin: 1
+    }, function(items) {
+
+	    if(items.enable_plugin == 1)
+        {
+            // Unload increment called before scan
+            decrementSanitize();
         }
     });
 
