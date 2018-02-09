@@ -166,7 +166,12 @@ function filter_css(selectors, selectorcss)
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
         }
+
         console.log("CSS Exfil Protection blocked: "+ selectors[s]);
+
+        // Update background.js with bagde count
+        block_count++;
+        browser.runtime.sendMessage(block_count.toString());
     }
 }
 
@@ -305,6 +310,7 @@ function buildContentLoadBlockerCSS()
 var filter_sheet      = null;   // Create stylesheet which will contain our override styles
 var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading of resources we may block
 var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
+var block_count       = 0;      // Number of blocked CSSRules
 
 
 // Run as soon as the DOM has been loaded
@@ -315,6 +321,9 @@ window.addEventListener("DOMContentLoaded", function() {
     css_load_blocker.innerText = buildContentLoadBlockerCSS();
     css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
     document.head.appendChild(css_load_blocker);
+
+    // Zero out badge
+    browser.runtime.sendMessage(block_count.toString());
 
     browser.storage.local.get({
         enable_plugin: 1
@@ -349,7 +358,7 @@ window.addEventListener("DOMContentLoaded", function() {
 
 window.addEventListener("load", function() {
 
-    chrome.storage.local.get({
+    browser.storage.local.get({
         enable_plugin: 1
     }, function(items) {
 

@@ -221,6 +221,10 @@ function filter_css(selectors, selectorcss)
         }
 
         console.log("CSS Exfil Protection blocked: "+ selectors[s]);
+
+        // Update background.js with bagde count
+        block_count++;
+        chrome.extension.sendMessage(block_count.toString());
     }
 }
 
@@ -280,6 +284,7 @@ function buildContentLoadBlockerCSS()
 var filter_sheet      = null;   // Create stylesheet which will contain our override styles
 var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading of resources we may block
 var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
+var block_count       = 0;      // Number of blocked CSSRules
 
 
 // Run as soon as the DOM has been loaded
@@ -291,6 +296,8 @@ window.addEventListener("DOMContentLoaded", function() {
     css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
     document.head.appendChild(css_load_blocker);
 
+    // Zero out badge
+    chrome.extension.sendMessage(block_count.toString());
 
     chrome.storage.local.get({
         enable_plugin: 1
