@@ -11,10 +11,45 @@ function scan_css()
 
         if(rules == null)
         {
-            // Retrieve and parse cross domain stylesheet
-            //console.log("Cross domain stylesheet: "+ sheets[i].href);
-            incrementSanitize();
-            getCrossDomainCSS(sheets[i]);
+            if(sheets[i].href == null)
+            {
+                // If we reach here it's due to a Firefox CSS load timing error
+                
+                var _sheet = sheets[i];
+                setTimeout(function checkRulesInit2() { 
+                    rules = getCSSRules(_sheet);
+                    if(rules == null)
+                    {
+                        //console.log("Rechecking for rules...");
+                        setTimeout(checkRulesInit2, 1000);
+                    }
+                    else
+                    {
+                        incrementSanitize();
+                        handleImportedCSS(rules);
+
+                        // Parse origin stylesheet
+                        //console.log("DOM stylesheet...");
+                        var _selectors = parseCSSRules(rules);
+                        filter_css(_selectors[0], _selectors[1]);
+
+                        if(checkCSSDisabled(_sheet))
+                        {
+                            enableCSS(_sheet);
+                        }
+
+                        decrementSanitize();
+                    }
+                }, 1000);
+            }
+            else
+            {
+                // Retrieve and parse cross domain stylesheet
+                //console.log("Cross domain stylesheet: "+ sheets[i].href);
+                incrementSanitize();
+                getCrossDomainCSS(sheets[i]);
+            }
+
         }
         else
         {
@@ -56,7 +91,6 @@ function handleImportedCSS(rules)
             {
                 // Parse imported cross domain sheet
                 //console.log("Imported Cross Domain CSS...");
-                //disableCSS(rules[r].styleSheet);
                 getCrossDomainCSS(rules[r].styleSheet);
             }
             else
@@ -182,6 +216,20 @@ function getCrossDomainCSS(orig_sheet)
 {
 	var rules;
     var url = orig_sheet.href;
+
+    if(url != null)
+    {
+        if( seen_url.indexOf(url) === -1 )
+        {
+            seen_url.push(url);
+        }
+        else
+        {
+            //console.log("Already checked URL");
+            decrementSanitize();
+            return;
+        }
+    }
 
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -311,6 +359,7 @@ var filter_sheet      = null;   // Create stylesheet which will contain our over
 var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading of resources we may block
 var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
 var block_count       = 0;      // Number of blocked CSSRules
+var seen_url          = [];     // Keep track of scanned cross-domain URL's
 
 
 // Run as soon as the DOM has been loaded

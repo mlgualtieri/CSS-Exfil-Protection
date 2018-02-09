@@ -163,6 +163,20 @@ function getCrossDomainCSS(orig_sheet)
 	var rules;
     var url = orig_sheet.href;
 
+    if(url != null)
+    {
+        if( seen_url.indexOf(url) === -1 )
+        {
+            seen_url.push(url);
+        }
+        else
+        {
+            //console.log("Already checked URL");
+            decrementSanitize();
+            return;
+        }
+    }
+
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.onreadystatechange = function() 
@@ -285,6 +299,7 @@ var filter_sheet      = null;   // Create stylesheet which will contain our over
 var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading of resources we may block
 var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
 var block_count       = 0;      // Number of blocked CSSRules
+var seen_url          = [];     // Keep track of scanned cross-domain URL's
 
 
 // Run as soon as the DOM has been loaded
