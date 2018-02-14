@@ -225,13 +225,17 @@ function filter_css(selectors, selectorcss)
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { background-image:none !important; }", filter_sheet.sheet.cssRules.length);
         }
-        else if( selectorcss[s].indexOf('list-style') )
+        if( selectorcss[s].indexOf('list-style') )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
         }
-        else if( selectorcss[s].indexOf('cursor') )
+        if( selectorcss[s].indexOf('cursor') )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
+        }
+        if( selectorcss[s].indexOf('content') )
+        {
+            filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
         }
 
         console.log("CSS Exfil Protection blocked: "+ selectors[s]);
@@ -285,7 +289,7 @@ function decrementSanitize()
 
 function buildContentLoadBlockerCSS()
 {
-    var csstext = "input,input ~ * { background-image:none !important; list-style: inherit !important; cursor: auto !important;}";
+    var csstext = "input,input ~ * { background-image:none !important; list-style: inherit !important; cursor: auto !important; content:normal !important; } input::before,input::after,input ~ *::before, input ~ *::after { content:normal !important; }";
     return csstext;
 }
 
