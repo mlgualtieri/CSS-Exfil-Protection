@@ -155,10 +155,17 @@ function parseCSSRules(rules)
             }
 
             // If CSS selector is parsing text and is loading a remote resource add to our blocking queue
+            // Flag rules that:
+            // 1) Match a value attribute selector which appears to be parsing text 
+            // 2) Calls a remote URL
+            // 3) The URL is not an xmlns property
             if( 
                 ( (selectorText != null) && (cssText != null) && 
                   (selectorText.indexOf('value') !== -1) && (selectorText.indexOf('=') !== -1) ) &&
-                ( (cssText.indexOf('url') !== -1) && ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) ) )
+                ( (cssText.indexOf('url') !== -1) && 
+                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) ) && 
+                    (cssText.indexOf("xmlns=\\'http://") === -1)
+                )
               )
             {
                 //console.log("CSS Exfil Protection blocked: "+ rules[r].selectorText);
