@@ -76,30 +76,33 @@ function scan_css()
 function handleImportedCSS(rules)
 {
     // Scan for imported stylesheets
-    for(var r=0; r < rules.length; r++)
+    if(rules != null)
     {
-        if( Object.prototype.toString.call(rules[r]) == "[object CSSImportRule]")
+        for(var r=0; r < rules.length; r++)
         {
-            // Adding new sheet to the list
-            incrementSanitize();
-
-            // Found an imported CSS Stylesheet
-            //console.log("Imported CSS...");
-
-            var _rules = getCSSRules(rules[r].styleSheet);
-            if(_rules == null)
+            if( Object.prototype.toString.call(rules[r]) == "[object CSSImportRule]")
             {
-                // Parse imported cross domain sheet
-                //console.log("Imported Cross Domain CSS...");
-                getCrossDomainCSS(rules[r].styleSheet);
-            }
-            else
-            {
-                // Parse imported DOM sheet
-                //console.log("Imported DOM CSS...");
-                var _selectors = parseCSSRules(_rules);
-                filter_css(_selectors[0], _selectors[1]);
-                decrementSanitize();
+                // Adding new sheet to the list
+                incrementSanitize();
+
+                // Found an imported CSS Stylesheet
+                //console.log("Imported CSS...");
+
+                var _rules = getCSSRules(rules[r].styleSheet);
+                if(_rules == null)
+                {
+                    // Parse imported cross domain sheet
+                    //console.log("Imported Cross Domain CSS...");
+                    getCrossDomainCSS(rules[r].styleSheet);
+                }
+                else
+                {
+                    // Parse imported DOM sheet
+                    //console.log("Imported DOM CSS...");
+                    var _selectors = parseCSSRules(_rules);
+                    filter_css(_selectors[0], _selectors[1]);
+                    decrementSanitize();
+                }
             }
         }
     }

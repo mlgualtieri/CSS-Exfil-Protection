@@ -13,7 +13,7 @@ function scan_css()
         if(rules == null)
         {
             // Retrieve and parse cross-domain stylesheet
-            //console.log("Cross domain stylesheet: "+ sheets[i].href);
+            console.log("Cross domain stylesheet: "+ sheets[i].href);
             incrementSanitize();
             getCrossDomainCSS(sheets[i]);
         }
@@ -23,7 +23,7 @@ function scan_css()
             handleImportedCSS(rules);
 
             // Parse same-origin stylesheet
-            //console.log("DOM stylesheet...");
+            console.log("DOM stylesheet...");
             var _selectors = parseCSSRules(rules);
             filter_css(_selectors[0], _selectors[1]);
 
@@ -41,37 +41,40 @@ function scan_css()
 
 function handleImportedCSS(rules)
 {
-    // Scan for imported stylesheets
-    for(var r=0; r < rules.length; r++)
+    if(rules != null)
     {
-        if( Object.prototype.toString.call(rules[r]) == "[object CSSImportRule]")
+        // Scan for imported stylesheets
+        for(var r=0; r < rules.length; r++)
         {
-            // Adding new sheet to list
-            incrementSanitize();
-
-            // Found an imported CSS Stylesheet
-            //console.log("Imported CSS...");
-
-            var _rules = getCSSRules(rules[r].styleSheet);
-            if(_rules == null)
+            if( Object.prototype.toString.call(rules[r]) == "[object CSSImportRule]")
             {
-                // Parse imported cross domain sheet
-                //console.log("Imported Cross Domain CSS...");
-                getCrossDomainCSS(rules[r].styleSheet);
+                // Adding new sheet to list
+                incrementSanitize();
+
+                // Found an imported CSS Stylesheet
+                console.log("Imported CSS...");
+
+                var _rules = getCSSRules(rules[r].styleSheet);
+                if(_rules == null)
+                {
+                    // Parse imported cross domain sheet
+                    console.log("Imported Cross Domain CSS...");
+                    getCrossDomainCSS(rules[r].styleSheet);
+                }
+                else
+                {
+                    // Parse imported DOM sheet
+                    console.log("Imported DOM CSS...");
+                    var _selectors = parseCSSRules(_rules);
+                    filter_css(_selectors[0], _selectors[1]);
+                    decrementSanitize();
+                }
             }
             else
             {
-                // Parse imported DOM sheet
-                //console.log("Imported DOM CSS...");
-                var _selectors = parseCSSRules(_rules);
-                filter_css(_selectors[0], _selectors[1]);
-                decrementSanitize();
+                // imported rules must always come first so end the loop if we see a non-import rule
+                r = rules.length;
             }
-        }
-        else
-        {
-            // imported rules must always come first so end the loop if we see a non-import rule
-            r = rules.length;
         }
     }
 }
