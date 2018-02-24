@@ -1,4 +1,75 @@
 
+// Only scan single stylesheet
+function scan_css_single(css_stylesheet)
+{
+    var selectors   = [];
+    var selectorcss = [];
+    var rules       = getCSSRules(css_stylesheet);
+
+    if(rules == null)
+    {
+        if(css_stylesheet.href == null)
+        {
+            // If we reach here it's due to a Firefox CSS load timing error
+            
+            var _sheet = css_stylesheet;
+            setTimeout(function checkRulesInit2() { 
+                rules = getCSSRules(_sheet);
+                if(rules == null)
+                {
+                    //console.log("Rechecking for rules...");
+                    setTimeout(checkRulesInit2, 1000);
+                }
+                else
+                {
+                    incrementSanitize();
+                    handleImportedCSS(rules);
+
+                    // Parse origin stylesheet
+                    //console.log("DOM stylesheet...");
+                    var _selectors = parseCSSRules(rules);
+                    filter_css(_selectors[0], _selectors[1]);
+
+                    if(checkCSSDisabled(_sheet))
+                    {
+                        enableCSS(_sheet);
+                    }
+
+                    decrementSanitize();
+                }
+            }, 1000);
+        }
+        else
+        {
+            // Retrieve and parse cross domain stylesheet
+            //console.log("Cross domain stylesheet: "+ css_stylesheet.href);
+            incrementSanitize();
+            getCrossDomainCSS(css_stylesheet);
+        }
+
+    }
+    else
+    {
+        incrementSanitize();
+        handleImportedCSS(rules);
+
+        // Parse origin stylesheet
+        //console.log("DOM stylesheet...");
+        var _selectors = parseCSSRules(rules);
+        filter_css(_selectors[0], _selectors[1]);
+
+        if(checkCSSDisabled(css_stylesheet))
+        {
+            enableCSS(css_stylesheet);
+        }
+
+        decrementSanitize();
+    }
+}
+
+
+
+// Scan all document stylesheets
 function scan_css() 
 {
 	var sheets = document.styleSheets;
@@ -337,7 +408,10 @@ function checkCSSDisabled(_sheet)
 function disableAndRemoveCSS(_sheet)
 {
     _sheet.disabled = true;
-    _sheet.parentNode.removeChild(_sheet);
+    if(_sheet.parentNode != null)
+    {
+        _sheet.parentNode.removeChild(_sheet);
+    }
 }
 
 
@@ -375,6 +449,25 @@ var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to u
 var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 
+// Create an observer instance to monitor CSS injection
+var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if( 
+            (mutation.attributeName == "style") || 
+            (mutation.attributeName == "link") || 
+            ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "style")) ||
+            ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "link"))
+          )
+        {
+            scan_css_single( document.styleSheets[document.styleSheets.length - 1] );
+        }
+    });
+});
+
+// configuration of the observer:
+var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
+
+
 
 // Run as soon as the DOM has been loaded
 window.addEventListener("DOMContentLoaded", function() {
@@ -406,6 +499,9 @@ window.addEventListener("DOMContentLoaded", function() {
             incrementSanitize();
 
             scan_css();
+
+            // monitor document for delayed CSS injection
+            observer.observe(document, observer_config);
         }
         else
         {

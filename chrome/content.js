@@ -1,4 +1,5 @@
 
+// Only scan single stylesheet
 function scan_css_single(css_stylesheet)
 {
         var selectors   = [];
@@ -35,6 +36,7 @@ function scan_css_single(css_stylesheet)
 
 
 
+// Scan all document stylesheets
 function scan_css() 
 {
 	var sheets = document.styleSheets;
@@ -358,7 +360,6 @@ var seen_url          = [];     // Keep track of scanned cross-domain URL's
 // Create an observer instance to monitor CSS injection
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
-        console.log(mutation.attributeName);
         if( 
             (mutation.attributeName == "style") || 
             (mutation.attributeName == "link") || 
