@@ -163,7 +163,7 @@ function parseCSSRules(rules)
                 ( (selectorText != null) && (cssText != null) && 
                   (selectorText.indexOf('value') !== -1) && (selectorText.indexOf('=') !== -1) ) &&
                 ( (cssText.indexOf('url') !== -1) && 
-                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) ) && 
+                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) || (cssText.indexOf('//') !== -1) ) && 
                     (cssText.indexOf("xmlns=\\'http://") === -1)
                 )
               )
@@ -212,12 +212,12 @@ function filter_css(selectors, selectorcss)
             filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
         }
 
-        console.log("CSS Exfil Protection blocked: "+ selectors[s]);
+        //console.log("CSS Exfil Protection blocked: "+ selectors[s]);
 
         // Update background.js with bagde count
         block_count++;
-        browser.runtime.sendMessage(block_count.toString());
     }
+    browser.runtime.sendMessage(block_count.toString());
 }
 
 
