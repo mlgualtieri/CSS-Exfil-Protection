@@ -269,23 +269,24 @@ function filter_css(selectors, selectorcss)
     // Loop through found selectors and override CSS
     for(s in selectors)
     {
-        if( selectorcss[s].indexOf('background') )
+        if( selectorcss[s].indexOf('background') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { background:none !important; }", filter_sheet.sheet.cssRules.length);
         }
-        if( selectorcss[s].indexOf('list-style') )
+        if( selectorcss[s].indexOf('list-style') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
         }
-        if( selectorcss[s].indexOf('cursor') )
+        if( selectorcss[s].indexOf('cursor') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
         }
-        if( selectorcss[s].indexOf('content') )
+        if( selectorcss[s].indexOf('content') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
         }
 
+        // Causes performance issue if large amounts of resources are blocked, just use when debugging
         //console.log("CSS Exfil Protection blocked: "+ selectors[s]);
 
         // Update background.js with bagde count

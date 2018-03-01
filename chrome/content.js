@@ -11,13 +11,13 @@ function scan_css_single(css_stylesheet)
     var selectors   = [];
     var selectorcss = [];
     var rules       = getCSSRules(css_stylesheet);
-    console.log("New CSS Found:");
-    console.log(css_stylesheet);
+    //console.log("New CSS Found:");
+    //console.log(css_stylesheet);
 
     if(rules == null)
     {
         // Retrieve and parse cross-domain stylesheet
-        console.log("Cross domain stylesheet: "+ css_stylesheet.href);
+        //console.log("Cross domain stylesheet: "+ css_stylesheet.href);
         incrementSanitize();
         getCrossDomainCSS(css_stylesheet);
     }
@@ -27,7 +27,7 @@ function scan_css_single(css_stylesheet)
         handleImportedCSS(rules);
 
         // Parse same-origin stylesheet
-        console.log("DOM stylesheet...");
+        //console.log("DOM stylesheet...");
         var _selectors = parseCSSRules(rules);
         filter_css(_selectors[0], _selectors[1]);
 
@@ -57,7 +57,7 @@ function scan_css()
         if(rules == null)
         {
             // Retrieve and parse cross-domain stylesheet
-            console.log("Cross domain stylesheet: "+ sheets[i].href);
+            //console.log("Cross domain stylesheet: "+ sheets[i].href);
             incrementSanitize();
             getCrossDomainCSS(sheets[i]);
         }
@@ -67,7 +67,7 @@ function scan_css()
             handleImportedCSS(rules);
 
             // Parse same-origin stylesheet
-            console.log("DOM stylesheet...");
+            //console.log("DOM stylesheet...");
             var _selectors = parseCSSRules(rules);
             filter_css(_selectors[0], _selectors[1]);
 
@@ -96,19 +96,19 @@ function handleImportedCSS(rules)
                 incrementSanitize();
 
                 // Found an imported CSS Stylesheet
-                console.log("Imported CSS...");
+                //console.log("Imported CSS...");
 
                 var _rules = getCSSRules(rules[r].styleSheet);
                 if(_rules == null)
                 {
                     // Parse imported cross domain sheet
-                    console.log("Imported Cross Domain CSS...");
+                    //console.log("Imported Cross Domain CSS...");
                     getCrossDomainCSS(rules[r].styleSheet);
                 }
                 else
                 {
                     // Parse imported DOM sheet
-                    console.log("Imported DOM CSS...");
+                    //console.log("Imported DOM CSS...");
                     var _selectors = parseCSSRules(_rules);
                     filter_css(_selectors[0], _selectors[1]);
                     decrementSanitize();
@@ -186,7 +186,6 @@ function parseCSSRules(rules)
                 )
               )
             {
-                //console.log("CSS Exfil Protection blocked: "+ rules[r].selectorText);
                 selectors.push(rules[r].selectorText);
                 selectorcss.push(cssText);
             }
@@ -276,29 +275,30 @@ function filter_css(selectors, selectorcss)
     // Loop through found selectors and modify CSS if necessary
     for(s in selectors)
     {
-        if( selectorcss[s].indexOf('background') )
+        if( selectorcss[s].indexOf('background') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { background-image:none !important; }", filter_sheet.sheet.cssRules.length);
         }
-        if( selectorcss[s].indexOf('list-style') )
+        if( selectorcss[s].indexOf('list-style') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
         }
-        if( selectorcss[s].indexOf('cursor') )
+        if( selectorcss[s].indexOf('cursor') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
         }
-        if( selectorcss[s].indexOf('content') )
+        if( selectorcss[s].indexOf('content') !== -1 )
         {
             filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
         }
 
-        console.log("CSS Exfil Protection blocked: "+ selectors[s]);
+        // Causes performance issue if large amounts of resources are blocked, just use when debugging
+        //console.log("CSS Exfil Protection blocked: "+ selectors[s]);
 
         // Update background.js with bagde count
         block_count++;
-        chrome.extension.sendMessage(block_count.toString());
     }
+    chrome.extension.sendMessage(block_count.toString());
 }
 
 
