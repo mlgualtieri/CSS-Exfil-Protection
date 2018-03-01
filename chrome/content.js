@@ -2,36 +2,42 @@
 // Only scan single stylesheet
 function scan_css_single(css_stylesheet)
 {
-        var selectors   = [];
-        var selectorcss = [];
-        var rules       = getCSSRules(css_stylesheet);
-        console.log("New CSS Found:");
-        console.log(css_stylesheet);
+    // Create new filter sheet to ensure styles are overwritten
+    filter_sheet = document.createElement('style');
+    filter_sheet.className = "__css_exfil_protection_filtered_styles";
+    filter_sheet.innerText = "";
+    document.head.appendChild(filter_sheet);
 
-        if(rules == null)
+    var selectors   = [];
+    var selectorcss = [];
+    var rules       = getCSSRules(css_stylesheet);
+    console.log("New CSS Found:");
+    console.log(css_stylesheet);
+
+    if(rules == null)
+    {
+        // Retrieve and parse cross-domain stylesheet
+        console.log("Cross domain stylesheet: "+ css_stylesheet.href);
+        incrementSanitize();
+        getCrossDomainCSS(css_stylesheet);
+    }
+    else
+    {
+        incrementSanitize();
+        handleImportedCSS(rules);
+
+        // Parse same-origin stylesheet
+        console.log("DOM stylesheet...");
+        var _selectors = parseCSSRules(rules);
+        filter_css(_selectors[0], _selectors[1]);
+
+        if(checkCSSDisabled(css_stylesheet))
         {
-            // Retrieve and parse cross-domain stylesheet
-            console.log("Cross domain stylesheet: "+ css_stylesheet.href);
-            incrementSanitize();
-            getCrossDomainCSS(css_stylesheet);
+            enableCSS(css_stylesheet);
         }
-        else
-        {
-            incrementSanitize();
-            handleImportedCSS(rules);
 
-            // Parse same-origin stylesheet
-            console.log("DOM stylesheet...");
-            var _selectors = parseCSSRules(rules);
-            filter_css(_selectors[0], _selectors[1]);
-
-            if(checkCSSDisabled(css_stylesheet))
-            {
-                enableCSS(css_stylesheet);
-            }
-
-            decrementSanitize();
-        }
+        decrementSanitize();
+    }
 }
 
 
@@ -169,13 +175,13 @@ function parseCSSRules(rules)
             // If CSS selector is parsing text and is loading a remote resource add to our blocking queue
             // Flag rules that:
             // 1) Match a value attribute selector which appears to be parsing text 
-            // 2) Calls a remote URL
+            // 2) Calls a remote URL (https, http, //)
             // 3) The URL is not an xmlns property
             if( 
                 ( (selectorText != null) && (cssText != null) && 
                   (selectorText.indexOf('value') !== -1) && (selectorText.indexOf('=') !== -1) ) &&
                 ( (cssText.indexOf('url') !== -1) && 
-                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) ) && 
+                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) || (cssText.indexOf('//') !== -1) ) && 
                     (cssText.indexOf("xmlns='http://") === -1) 
                 )
               )
@@ -357,24 +363,48 @@ var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to u
 var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 
+
+// MG Commenting for now due to performance issues
+/*
 // Create an observer instance to monitor CSS injection
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
-        if( 
-            (mutation.attributeName == "style") || 
-            (mutation.attributeName == "link") || 
-            ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "style")) ||
-            ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "link"))
-          )
-        {
-            scan_css_single( document.styleSheets[document.styleSheets.length - 1] );
-        }
+        return;
+
+        setTimeout(function observerScan() { 
+            console.log("async observer call...");
+            if( 
+                ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "style")) ||
+                ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "link")) ||
+                (mutation.attributeName == "style") || 
+                (mutation.attributeName == "link") 
+              )
+            {
+                var encoded = btoa(mutation.addedNodes[0]);
+                console.log(encoded);
+
+                var skipscan = 0;
+                if( (mutation.addedNodes.length > 0) && (mutation.addedNodes[0].classList.length > 0) )
+                {
+                    // Skip the scan on injected filter sheet
+                    if(mutation.addedNodes[0].classList == "__css_exfil_protection_filtered_styles")
+                    {
+                        skipscan = 1;
+                    }
+                }
+
+                if(skipscan == 0)
+                {
+                    scan_css_single( document.styleSheets[document.styleSheets.length - 1] );
+                }
+            }
+        }, 0);
     });
 });
 
 // configuration of the observer:
 var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
-
+*/
 
 
 
@@ -409,8 +439,9 @@ window.addEventListener("DOMContentLoaded", function() {
 
             scan_css();
 
+            // MG Commenting for now due to performance issues
             // monitor document for delayed CSS injection
-            observer.observe(document, observer_config);
+            //observer.observe(document, observer_config);
         }
         else
 	    {

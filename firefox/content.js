@@ -231,13 +231,13 @@ function parseCSSRules(rules)
             // If CSS selector is parsing text and is loading a remote resource add to our blocking queue
             // Flag rules that:
             // 1) Match a value attribute selector which appears to be parsing text 
-            // 2) Calls a remote URL
+            // 2) Calls a remote URL (https, http, //)
             // 3) The URL is not an xmlns property
             if( 
                 ( (selectorText != null) && (cssText != null) && 
                   (selectorText.indexOf('value') !== -1) && (selectorText.indexOf('=') !== -1) ) &&
                 ( (cssText.indexOf('url') !== -1) && 
-                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) ) && 
+                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) || (cssText.indexOf('//') !== -1) ) && 
                     (cssText.indexOf("xmlns=\\'http://") === -1)
                 )
               )
@@ -449,6 +449,8 @@ var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to u
 var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 
+// MG Commenting for now due to performance issues
+/*
 // Create an observer instance to monitor CSS injection
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
@@ -466,7 +468,7 @@ var observer = new MutationObserver(function(mutations) {
 
 // configuration of the observer:
 var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
-
+*/
 
 
 // Run as soon as the DOM has been loaded
@@ -500,8 +502,9 @@ window.addEventListener("DOMContentLoaded", function() {
 
             scan_css();
 
+            // MG Commenting for now due to performance issues
             // monitor document for delayed CSS injection
-            observer.observe(document, observer_config);
+            //observer.observe(document, observer_config);
         }
         else
         {
