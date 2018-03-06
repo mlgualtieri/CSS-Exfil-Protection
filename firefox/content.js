@@ -328,8 +328,11 @@ function getCrossDomainCSS(orig_sheet)
             sheet.innerText = xhr.responseText;
             document.head.appendChild(sheet);
 
-	        var sheets = document.styleSheets;
-            rules = getCSSRules(sheets[ sheets.length - 1]);
+            // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
+            // instead get the stylesheet directly from the temporary object (sheet.sheet)
+	        //var sheets = document.styleSheets;
+            //rules = getCSSRules(sheets[ sheets.length - 1]);
+            rules = getCSSRules(sheet.sheet);
 
             // if rules is null is likely means we triggered a firefox 
             // timing error where the new CSS sheet isn't ready yet
@@ -337,7 +340,8 @@ function getCrossDomainCSS(orig_sheet)
             {
                 // Keep checking every 10ms until rules have become available
                 setTimeout(function checkRulesInit() { 
-                    rules = getCSSRules(sheets[ sheets.length - 1]);
+                    //rules = getCSSRules(sheets[ sheets.length - 1]);
+                    rules = getCSSRules(sheet.sheet);
                         
                     if(rules == null)
                     {

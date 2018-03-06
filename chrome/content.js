@@ -11,8 +11,8 @@ function scan_css_single(css_stylesheet)
     var selectors   = [];
     var selectorcss = [];
     var rules       = getCSSRules(css_stylesheet);
-    //console.log("New CSS Found:");
-    //console.log(css_stylesheet);
+    console.log("New CSS Found:");
+    console.log(css_stylesheet);
 
     if(rules == null)
     {
@@ -242,8 +242,11 @@ function getCrossDomainCSS(orig_sheet)
             sheet.innerText = xhr.responseText;
             document.head.appendChild(sheet);
             
-            var sheets = document.styleSheets;
-            rules = getCSSRules(sheets[ sheets.length - 1]);
+            // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
+            // instead get the stylesheet directly from the temporary object (sheet.sheet)
+            //var sheets = document.styleSheets;
+            //rules = getCSSRules(sheets[ sheets.length - 1]);
+            rules = getCSSRules(sheet.sheet);
 
             handleImportedCSS(rules);
 
@@ -362,9 +365,8 @@ var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading
 var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
 var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
+var seen_hash         = {};
 
-
-// MG Commenting for now due to performance issues
 /*
 // Create an observer instance to monitor CSS injection
 var observer = new MutationObserver(function(mutations) {
@@ -380,10 +382,22 @@ var observer = new MutationObserver(function(mutations) {
                 (mutation.attributeName == "link") 
               )
             {
-                var encoded = btoa(mutation.addedNodes[0]);
-                console.log(encoded);
-
                 var skipscan = 0;
+                var style_hash = btoa(mutation.addedNodes[0]);
+                console.log(style_hash);
+
+                // check to see if we have already scanned this exact CSS
+                if(seen_hash[style_hash] != null)
+                {
+                    skipscan = 1;
+                }
+                else
+                {
+                    // Set this now for testing... need to only set this if the CSS has no sanitization
+                    seen_hash[style_hash] = 1;
+                }
+
+                // Ensure we aren't re-scanning our injected stylesheet
                 if( (mutation.addedNodes.length > 0) && (mutation.addedNodes[0].classList.length > 0) )
                 {
                     // Skip the scan on injected filter sheet
@@ -401,10 +415,10 @@ var observer = new MutationObserver(function(mutations) {
         }, 0);
     });
 });
+*/
 
 // configuration of the observer:
-var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
-*/
+//var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
 
 
 
@@ -439,7 +453,6 @@ window.addEventListener("DOMContentLoaded", function() {
 
             scan_css();
 
-            // MG Commenting for now due to performance issues
             // monitor document for delayed CSS injection
             //observer.observe(document, observer_config);
         }
