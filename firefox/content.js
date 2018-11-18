@@ -42,7 +42,7 @@ function scan_css_single(css_stylesheet)
         else
         {
             // Retrieve and parse cross domain stylesheet
-            //console.log("Cross domain stylesheet: "+ css_stylesheet.href);
+            //console.log("Cross domain stylesheet single: "+ css_stylesheet.href);
             incrementSanitize();
             getCrossDomainCSS(css_stylesheet);
         }
@@ -300,6 +300,7 @@ function filter_css(selectors, selectorcss)
 
 function getCrossDomainCSS(orig_sheet)
 {
+    //console.log(orig_sheet);
 	var rules;
     var url = orig_sheet.href;
 
@@ -328,11 +329,13 @@ function getCrossDomainCSS(orig_sheet)
             sheet.innerText = xhr.responseText;
             document.head.appendChild(sheet);
 
+
             // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
             // instead get the stylesheet directly from the temporary object (sheet.sheet)
 	        //var sheets = document.styleSheets;
             //rules = getCSSRules(sheets[ sheets.length - 1]);
             rules = getCSSRules(sheet.sheet);
+
 
             // if rules is null is likely means we triggered a firefox 
             // timing error where the new CSS sheet isn't ready yet
@@ -395,16 +398,22 @@ function getCrossDomainCSS(orig_sheet)
 
 function disableCSS(_sheet)
 {
+    //console.log("CSS Disabled State: "+ _sheet.disabled);
     //console.log("Disabled CSS: "+ _sheet.href);
     _sheet.disabled = true;
 }
 function enableCSS(_sheet)
 {
     //console.log("Enabled CSS: "+ _sheet.href);
-    _sheet.disabled = false;
-    
-    // Some sites like news.google.com require a resize event to properly render all elements after re-enabling CSS
-    window.dispatchEvent(new Event('resize'));
+
+    // Check to ensure sheet should be enabled before we do
+    if( !disabled_css_hash[ window.btoa(_sheet.href) ] )
+    {
+        _sheet.disabled = false;
+        
+        // Some sites like news.google.com require a resize event to properly render all elements after re-enabling CSS
+        window.dispatchEvent(new Event('resize'));
+    }
 }
 function checkCSSDisabled(_sheet)
 {
@@ -453,6 +462,7 @@ var css_load_blocker  = null;   // Temporary stylesheet to prevent early loading
 var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to unload css_load_blocker
 var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
+var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
 
 // MG Commenting for now due to performance issues
 /*
@@ -478,6 +488,16 @@ var observer_config = { attributes: true, childList: true, subtree: true, charac
 
 // Run as soon as the DOM has been loaded
 window.addEventListener("DOMContentLoaded", function() {
+
+    // Check if the CSS sheet is disabled by default
+    for (var i=0; i < document.styleSheets.length; i++) 
+	{
+        //console.log("CSS sheet: "+ document.styleSheets[i].href);
+        //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
+        //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
+        disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
+    }
+
 
     // Create temporary stylesheet that will block early loading of resources we may want to block
     css_load_blocker  = document.createElement('style');
@@ -516,6 +536,9 @@ window.addEventListener("DOMContentLoaded", function() {
             // Plugin is disabled... enable page without sanitizing
             css_load_blocker.disabled = true;
             css_load_blocker.parentNode.removeChild(css_load_blocker);
+
+            // disable icon
+            browser.runtime.sendMessage('disabled');
         }
     });
 
