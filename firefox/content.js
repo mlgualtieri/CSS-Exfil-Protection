@@ -498,7 +498,6 @@ window.addEventListener("DOMContentLoaded", function() {
         disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
     }
 
-
     // Create temporary stylesheet that will block early loading of resources we may want to block
     css_load_blocker  = document.createElement('style');
     css_load_blocker.innerText = buildContentLoadBlockerCSS();

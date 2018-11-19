@@ -1,7 +1,6 @@
 
 // Set badge with number of blocked resources
 browser.runtime.onMessage.addListener(function(message, sender) {
-    console.log(message);
 
     if(message == 'disabled')
     {
@@ -28,5 +27,4 @@ browser.runtime.onMessage.addListener(function(message, sender) {
 
     }
 });
-
 

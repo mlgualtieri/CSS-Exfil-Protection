@@ -56,10 +56,54 @@ function scan_css()
 
         if(rules == null)
         {
+            // Original codeblock... for removal
+            /*
             // Retrieve and parse cross-domain stylesheet
             //console.log("Cross domain stylesheet: "+ sheets[i].href);
             incrementSanitize();
             getCrossDomainCSS(sheets[i]);
+            */
+
+            if(sheets[i].href == null)
+            {
+                // If we reach here it's due to a CSS load timing error
+                
+                var _sheet = sheets[i];
+                setTimeout(function checkRulesInit2() { 
+                    rules = getCSSRules(_sheet);
+                    if(rules == null)
+                    {
+                        //console.log("Rechecking for rules...");
+                        setTimeout(checkRulesInit2, 1000);
+                    }
+                    else
+                    {
+                        incrementSanitize();
+                        handleImportedCSS(rules);
+
+                        // Parse origin stylesheet
+                        //console.log("DOM stylesheet...");
+                        var _selectors = parseCSSRules(rules);
+                        filter_css(_selectors[0], _selectors[1]);
+
+                        if(checkCSSDisabled(_sheet))
+                        {
+                            enableCSS(_sheet);
+                        }
+
+                        decrementSanitize();
+                    }
+                }, 1000);
+            }
+            else
+            {
+                // Retrieve and parse cross domain stylesheet
+                //console.log("Cross domain stylesheet: "+ sheets[i].href);
+                incrementSanitize();
+                getCrossDomainCSS(sheets[i]);
+            }
+
+
         }
         else
         {
@@ -103,6 +147,16 @@ function handleImportedCSS(rules)
                 {
                     // Parse imported cross domain sheet
                     //console.log("Imported Cross Domain CSS...");
+
+                    //Debug: for removal
+                    /*
+                    console.log(rules[r]);
+                    console.log(rules[r].styleSheet);
+                    for (var property in rules[r]) {
+                        console.log( property + ': ' + rules[r][property]+'; ' );
+                    }
+                    */
+
                     getCrossDomainCSS(rules[r].styleSheet);
                 }
                 else
@@ -248,6 +302,7 @@ function getCrossDomainCSS(orig_sheet)
             //rules = getCSSRules(sheets[ sheets.length - 1]);
             rules = getCSSRules(sheet.sheet);
 
+/*
             handleImportedCSS(rules);
 
             var _selectors = parseCSSRules(rules);
@@ -266,6 +321,67 @@ function getCrossDomainCSS(orig_sheet)
             decrementSanitize();
             
             return rules;
+*/
+
+
+            // if rules is null is likely means we triggered a 
+            // timing error where the new CSS sheet isn't ready yet
+            if(rules == null)
+            {
+                // Keep checking every 10ms until rules have become available
+                setTimeout(function checkRulesInit() { 
+                    //rules = getCSSRules(sheets[ sheets.length - 1]);
+                    rules = getCSSRules(sheet.sheet);
+                        
+                    if(rules == null)
+                    {
+                        setTimeout(checkRulesInit, 10);
+                    }
+                    else
+                    {
+                        handleImportedCSS(rules);
+    
+                        var _selectors = parseCSSRules(rules);
+                        filter_css(_selectors[0], _selectors[1]);
+    
+                        // Remove tmp stylesheet
+                        sheet.disabled = true;
+                        sheet.parentNode.removeChild(sheet);
+    
+                        if(checkCSSDisabled(orig_sheet))
+                        {
+                            enableCSS(orig_sheet);
+                        }
+                        decrementSanitize();
+                        return rules;
+                    }
+
+                }, 10);
+            }
+            else
+            {
+                handleImportedCSS(rules);
+
+                var _selectors = parseCSSRules(rules);
+                filter_css(_selectors[0], _selectors[1]);
+
+                // Remove tmp stylesheet
+                sheet.disabled = true;
+                sheet.parentNode.removeChild(sheet);
+
+                if(checkCSSDisabled(orig_sheet))
+                {
+                    enableCSS(orig_sheet);
+                }
+                decrementSanitize();
+                return rules;
+            }
+
+
+
+
+
+
         }
     }
     xhr.send();
@@ -314,10 +430,15 @@ function disableCSS(_sheet)
 function enableCSS(_sheet)
 {
     //console.log("Enabled CSS: "+ _sheet.href);
-    _sheet.disabled = false;
-    
-    // Some sites like news.google.com require a resize event to properly render all elements after re-enabling CSS
-    window.dispatchEvent(new Event('resize'));
+
+    // Check to ensure sheet should be enabled before we do
+    if( !disabled_css_hash[ window.btoa(_sheet.href) ] )
+    {
+        _sheet.disabled = false;
+        
+        // Some sites like news.google.com require a resize event to properly render all elements after re-enabling CSS
+        window.dispatchEvent(new Event('resize'));
+    }
 }
 function checkCSSDisabled(_sheet)
 {
@@ -366,6 +487,7 @@ var sanitize_inc      = 0;      // Incrementer to keep track when it's safe to u
 var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 var seen_hash         = {};
+var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
 
 /*
 // Create an observer instance to monitor CSS injection
@@ -427,6 +549,15 @@ var observer = new MutationObserver(function(mutations) {
 // Run as soon as the DOM has been loaded
 window.addEventListener("DOMContentLoaded", function() {
 
+    // Check if the CSS sheet is disabled by default
+    for (var i=0; i < document.styleSheets.length; i++) 
+	{
+        //console.log("CSS sheet: "+ document.styleSheets[i].href);
+        //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
+        //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
+        disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
+    }
+
     // Create temporary stylesheet that will block early loading of resources we may want to block
     css_load_blocker  = document.createElement('style');
     css_load_blocker.innerText = buildContentLoadBlockerCSS();
@@ -460,6 +591,10 @@ window.addEventListener("DOMContentLoaded", function() {
 	    {
             //console.log("Disabling CSS Exfil Protection");
             css_load_blocker.disabled = true;
+            css_load_blocker.parentNode.removeChild(css_load_blocker);
+
+            // disable icon
+            chrome.runtime.sendMessage('disabled');
 	    }
     });
 

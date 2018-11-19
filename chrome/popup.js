@@ -9,8 +9,13 @@ function save_options()
   	if(!document.getElementById('enable_plugin').checked)
 	{
 		enable_plugin = 0;
+        chrome.runtime.sendMessage('disabled');
 	}
- 
+    else
+    {
+        chrome.runtime.sendMessage('enabled');
+    }
+
   	chrome.storage.local.set({
   	    enable_plugin: enable_plugin
   	}, function() {});
