@@ -5,7 +5,7 @@ browser.runtime.onMessage.addListener(function(message, sender) {
     if(message == 'disabled')
     {
         browser.browserAction.setIcon({path:"icons/icon-disabled-48.png"});
-        browser.browserAction.setBadgeText({text: "X"});
+        browser.browserAction.setBadgeText({text: "-"});
         browser.browserAction.setBadgeBackgroundColor({ color: [55, 55, 55, 255] });
     }
     else if(message == 'enabled')

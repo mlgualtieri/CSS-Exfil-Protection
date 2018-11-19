@@ -52,3 +52,9 @@ footer {
 label {
     cursor:pointer;
 }
+
+.plugin-icon {
+    width:48px;
+    height:48px;
+}
+

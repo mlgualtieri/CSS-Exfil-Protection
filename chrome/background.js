@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener(function(message, sender) {
     if(message == 'disabled')
     {
         chrome.browserAction.setIcon({path:"icons/icon-disabled-48.png"});
-        chrome.browserAction.setBadgeText({text: "X"});
+        chrome.browserAction.setBadgeText({text: "-"});
         chrome.browserAction.setBadgeBackgroundColor({ color: [55, 55, 55, 255] });
     }
     else if(message == 'enabled')
