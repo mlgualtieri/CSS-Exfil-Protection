@@ -5,13 +5,19 @@ browser.runtime.onMessage.addListener(function(message, sender) {
     if(message == 'disabled')
     {
         browser.browserAction.setIcon({path:"icons/icon-disabled-48.png"});
-        browser.browserAction.setBadgeText({text: "-"});
+        //browser.browserAction.setBadgeText({text: "-"});
         browser.browserAction.setBadgeBackgroundColor({ color: [55, 55, 55, 255] });
     }
     else if(message == 'enabled')
     {
         browser.browserAction.setIcon({path:"icons/icon-48.png"});
         browser.browserAction.setBadgeText({text: ""});
+    }
+    else if(message == 'reenabled')
+    {
+        browser.browserAction.setIcon({path:"icons/icon-reenabled-48.png"});
+        browser.browserAction.setBadgeText({text: ""});
+        browser.browserAction.setBadgeBackgroundColor({ color: [255, 65, 54, 255] });
     }
     else
     {

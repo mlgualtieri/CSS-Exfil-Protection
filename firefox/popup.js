@@ -13,7 +13,8 @@ function save_options()
 	}
     else
     {
-        browser.runtime.sendMessage('enabled');
+        // display icon as reenabled (plugin is active but no resources have been scanned)
+        browser.runtime.sendMessage('reenabled');
     }
 
 

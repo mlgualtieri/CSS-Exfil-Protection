@@ -529,6 +529,9 @@ window.addEventListener("DOMContentLoaded", function() {
             // MG Commenting for now due to performance issues
             // monitor document for delayed CSS injection
             //observer.observe(document, observer_config);
+
+            // ensure icon is enabled
+            browser.runtime.sendMessage('enabled');
         }
         else
         {

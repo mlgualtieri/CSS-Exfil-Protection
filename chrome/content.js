@@ -586,6 +586,9 @@ window.addEventListener("DOMContentLoaded", function() {
 
             // monitor document for delayed CSS injection
             //observer.observe(document, observer_config);
+            
+            // ensure icon is enabled
+            chrome.runtime.sendMessage('enabled');
         }
         else
 	    {

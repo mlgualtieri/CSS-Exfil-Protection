@@ -13,7 +13,8 @@ function save_options()
 	}
     else
     {
-        chrome.runtime.sendMessage('enabled');
+        // display icon as reenabled (plugin is active but no resources have been scanned)
+        chrome.runtime.sendMessage('reenabled');
     }
 
   	chrome.storage.local.set({
