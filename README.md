@@ -16,7 +16,7 @@ Information about the plugins and the CSS Exfil attack can be found here:
 ### Release notes
 #### Version 1.0.12
 Released Jan. 4, 2019
-* Improved disabled icon state and adding reenabled icon state (incorporates suggestion from B00ze64)
+* Improved disabled icon state and adding reenabled icon state (incorporates suggestions from B00ze64)
 
 #### Version 1.0.11
 Released Nov. 20, 2018
