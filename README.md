@@ -14,6 +14,11 @@ Information about the plugins and the CSS Exfil attack can be found here:
 ---
 
 ### Release notes
+#### Version 1.0.14
+Released Jun. 17, 2019
+* Bugfix to properly scan relative path cross-domain stylesheets includes (issue #14) (reported by Firefox user CStark)
+* Bugfix for documents lacking a head section (e.g. when loading a PDF in browser)
+
 #### Version 1.0.12
 Released Jan. 4, 2019
 * Improved disabled icon state and adding reenabled icon state (incorporates suggestions from B00ze64)
