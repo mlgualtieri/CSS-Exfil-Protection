@@ -100,7 +100,7 @@ function scan_css()
                         handleImportedCSS(rules);
 
                         // Parse origin stylesheet
-                        //console.log("DOM stylesheet...");
+                        console.log("DOM stylesheet...");
                         var _selectors = parseCSSRules(rules);
                         filter_css(_selectors[0], _selectors[1]);
 
@@ -116,7 +116,7 @@ function scan_css()
             else
             {
                 // Retrieve and parse cross domain stylesheet
-                //console.log("Cross domain stylesheet: "+ sheets[i].href);
+                console.log("Cross domain stylesheet: "+ sheets[i].href);
                 incrementSanitize();
                 getCrossDomainCSS(sheets[i]);
             }
@@ -128,7 +128,7 @@ function scan_css()
             handleImportedCSS(rules);
 
             // Parse origin stylesheet
-            //console.log("DOM stylesheet...");
+            console.log("DOM stylesheet...");
             var _selectors = parseCSSRules(rules);
             filter_css(_selectors[0], _selectors[1]);
 
@@ -157,19 +157,19 @@ function handleImportedCSS(rules)
                 incrementSanitize();
 
                 // Found an imported CSS Stylesheet
-                //console.log("Imported CSS...");
+                console.log("Imported CSS...");
 
                 var _rules = getCSSRules(rules[r].styleSheet);
                 if(_rules == null)
                 {
                     // Parse imported cross domain sheet
-                    //console.log("Imported Cross Domain CSS...");
+                    console.log("Imported Cross Domain CSS...");
                     getCrossDomainCSS(rules[r].styleSheet);
                 }
                 else
                 {
                     // Parse imported DOM sheet
-                    //console.log("Imported DOM CSS...");
+                    console.log("Imported DOM CSS...");
                     var _selectors = parseCSSRules(_rules);
                     filter_css(_selectors[0], _selectors[1]);
                     decrementSanitize();
@@ -188,14 +188,14 @@ function getCSSRules(_sheet)
 	try 
 	{
         //Loading CSS
-	    //console.log("Loading CSS...");
+	    console.log("Loading CSS...");
 	    rules = _sheet.rules || _sheet.cssRules;
 	} 
 	catch(e) 
 	{
 	    if(e.name !== "SecurityError") 
 	    {
-            //console.log("Error loading rules:");
+            console.log("Error loading rules:");
             //console.log(e);
 	        //throw e;
 	    }
@@ -300,7 +300,7 @@ function filter_css(selectors, selectorcss)
 
 function getCrossDomainCSS(orig_sheet)
 {
-    //console.log(orig_sheet);
+    console.log(orig_sheet);
 	var rules;
     var url = orig_sheet.href;
 
@@ -327,7 +327,57 @@ function getCrossDomainCSS(orig_sheet)
             // Create stylesheet from remote CSS
             var sheet = document.createElement('style');
             sheet.innerText = xhr.responseText;
+
+            // Get all import rules
+            var matches = xhr.responseText.match( /@import.*?;/g );
+            var replaced = xhr.responseText;
+
+            // Get URL path of remote stylesheet (url minus the filename)
+            var _a  = document.createElement("a");
+            _a.href = url;
+            var _pathname = _a.pathname.substring(0, _a.pathname.lastIndexOf('/')) + "/";
+            var import_url_path = _a.origin + _pathname;
+
+            // Scan through all import rules
+            // if calling a relative resource, edit to include the original URL path
+            if(matches != null)
+            {
+                for(var i=0; i < matches.length; i++)
+                {
+                    // Only run if import is not calling a remote http:// or https:// resource
+                    if( (matches[i].indexOf('://') === -1) )
+                    {
+                        // Get file/path text from import rule (first text that's between quotes or parentheses)
+                        var import_file = matches[i].match(/['"\(](.*?)['"\)]/g);
+
+                        if(import_file != null)
+                        {
+                            if(import_file.length > 0)
+                            {
+                                var _import_file = import_file[0];
+
+                                // Remove quotes and parentheses
+                                _import_file = _import_file.replace(/['"\(\)]/g,'');
+
+                                // Trim whitespace
+                                _import_file = _import_file.trim();
+
+                                // Remove any URL parameters
+                                _import_file = _import_file.split("?")[0];
+
+                                // Replace filename with full url path
+                                var regex = new RegExp(_import_file);
+                                replaced  = replaced.replace(regex, import_url_path + _import_file);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add CSS to sheet and append to head so we can scan the rules
+            sheet.innerText = replaced;
             document.head.appendChild(sheet);
+
 
 
             // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
@@ -399,12 +449,12 @@ function getCrossDomainCSS(orig_sheet)
 function disableCSS(_sheet)
 {
     //console.log("CSS Disabled State: "+ _sheet.disabled);
-    //console.log("Disabled CSS: "+ _sheet.href);
+    console.log("Disabled CSS: "+ _sheet.href);
     _sheet.disabled = true;
 }
 function enableCSS(_sheet)
 {
-    //console.log("Enabled CSS: "+ _sheet.href);
+    console.log("Enabled CSS: "+ _sheet.href);
 
     // Check to ensure sheet should be enabled before we do
     if( !disabled_css_hash[ window.btoa(_sheet.href) ] )
@@ -432,7 +482,7 @@ function disableAndRemoveCSS(_sheet)
 function incrementSanitize()
 {
     sanitize_inc++;
-    //console.log("Increment: "+ sanitize_inc);
+    console.log("Increment: "+ sanitize_inc);
 }
 function decrementSanitize()
 {
@@ -441,7 +491,7 @@ function decrementSanitize()
     {
         disableAndRemoveCSS(css_load_blocker);
     }
-    //console.log("Decrement: "+ sanitize_inc);
+    console.log("Decrement: "+ sanitize_inc);
 }
 
 function buildContentLoadBlockerCSS()
@@ -502,7 +552,13 @@ window.addEventListener("DOMContentLoaded", function() {
     css_load_blocker  = document.createElement('style');
     css_load_blocker.innerText = buildContentLoadBlockerCSS();
     css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
-    document.head.appendChild(css_load_blocker);
+
+    // Null check to fix error that triggers when loading PDF's in browser
+    if(document.head != null)
+    {
+        document.head.appendChild(css_load_blocker);
+    }
+
 
     // Zero out badge
     browser.runtime.sendMessage(block_count.toString());

@@ -2,7 +2,7 @@
   "manifest_version": 2,
  
   "name": "CSS Exfil Protection",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "Guard against CSS data exfiltration attacks.",
 
   "content_security_policy": "script-src 'self'; object-src 'self'; style-src 'self'",

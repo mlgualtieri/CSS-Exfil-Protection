@@ -196,6 +196,7 @@ function getCSSRules(_sheet)
 	    {
             //console.log("Error loading rules:");
             //console.log(e);
+            //console.log(_sheet);
 	        //throw e;
 	    }
 	}
@@ -268,6 +269,12 @@ function parseCSSRules(rules)
 
 function getCrossDomainCSS(orig_sheet)
 {
+    if(orig_sheet == null)
+    {
+        decrementSanitize();
+        return;
+    }
+
 	var rules;
     var url = orig_sheet.href;
 
@@ -294,15 +301,66 @@ function getCrossDomainCSS(orig_sheet)
             // Create stylesheet from remote CSS
             var sheet = document.createElement('style');
             sheet.innerText = xhr.responseText;
+
+            // Get all import rules
+            var matches = xhr.responseText.match( /@import.*?;/g );
+            var replaced = xhr.responseText;
+
+            // Get URL path of remote stylesheet (url minus the filename)
+            var _a  = document.createElement("a");
+            _a.href = url;
+            var _pathname = _a.pathname.substring(0, _a.pathname.lastIndexOf('/')) + "/";
+            var import_url_path = _a.origin + _pathname;
+
+            // Scan through all import rules
+            // if calling a relative resource, edit to include the original URL path
+            if(matches != null)
+            {
+                for(var i=0; i < matches.length; i++)
+                {
+                    // Only run if import is not calling a remote http:// or https:// resource
+                    if( (matches[i].indexOf('://') === -1) )
+                    {
+                        // Get file/path text from import rule (first text that's between quotes or parentheses)
+                        var import_file = matches[i].match(/['"\(](.*?)['"\)]/g);
+
+                        if(import_file != null)
+                        {
+                            if(import_file.length > 0)
+                            {
+                                var _import_file = import_file[0];
+
+                                // Remove quotes and parentheses
+                                _import_file = _import_file.replace(/['"\(\)]/g,'');
+
+                                // Trim whitespace
+                                _import_file = _import_file.trim();
+
+                                // Remove any URL parameters
+                                _import_file = _import_file.split("?")[0];
+
+                                // Replace filename with full url path
+                                var regex = new RegExp(_import_file);
+                                replaced  = replaced.replace(regex, import_url_path + _import_file);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add CSS to sheet and append to head so we can scan the rules
+            sheet.innerText = replaced;
             document.head.appendChild(sheet);
             
+
             // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
             // instead get the stylesheet directly from the temporary object (sheet.sheet)
             //var sheets = document.styleSheets;
             //rules = getCSSRules(sheets[ sheets.length - 1]);
             rules = getCSSRules(sheet.sheet);
 
-/*
+            /*
+            // MG: Old code, for removal
             handleImportedCSS(rules);
 
             var _selectors = parseCSSRules(rules);
@@ -321,7 +379,7 @@ function getCrossDomainCSS(orig_sheet)
             decrementSanitize();
             
             return rules;
-*/
+            */
 
 
             // if rules is null is likely means we triggered a 
@@ -489,14 +547,16 @@ var seen_url          = [];     // Keep track of scanned cross-domain URL's
 var seen_hash         = {};
 var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
 
-/*
+
+
 // Create an observer instance to monitor CSS injection
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
-        return;
+        //return;
+        //console.log("CSS Exfil Promise");
 
         setTimeout(function observerScan() { 
-            console.log("async observer call...");
+            //console.log("async observer call...");
             if( 
                 ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "style")) ||
                 ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "link")) ||
@@ -505,19 +565,18 @@ var observer = new MutationObserver(function(mutations) {
               )
             {
                 var skipscan = 0;
-                var style_hash = btoa(mutation.addedNodes[0]);
-                console.log(style_hash);
 
                 // check to see if we have already scanned this exact CSS
-                if(seen_hash[style_hash] != null)
-                {
-                    skipscan = 1;
-                }
-                else
-                {
-                    // Set this now for testing... need to only set this if the CSS has no sanitization
-                    seen_hash[style_hash] = 1;
-                }
+                //if(seen_hash[style_hash] != null)
+                //{
+                //    skipscan = 1;
+                //}
+                //else
+                //{
+                //    // Set this now for testing... need to only set this if the CSS has no sanitization
+                //    seen_hash[style_hash] = 1;
+                //}
+                
 
                 // Ensure we aren't re-scanning our injected stylesheet
                 if( (mutation.addedNodes.length > 0) && (mutation.addedNodes[0].classList.length > 0) )
@@ -529,18 +588,65 @@ var observer = new MutationObserver(function(mutations) {
                     }
                 }
 
+
+                /*
+                if( 
+                    ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "style")) ||
+                    ((mutation.addedNodes.length > 0) && (mutation.addedNodes[0].localName == "link"))
+                  )
+                {
+                    console.log("New node: ");
+                    console.log(mutation.addedNodes);
+                }
+
+                if( (mutation.attributeName == "style") || (mutation.attributeName == "link") )
+                {
+                    console.log("New mutation: ");
+                    console.log(mutation);
+                }
+                */
+
                 if(skipscan == 0)
                 {
-                    scan_css_single( document.styleSheets[document.styleSheets.length - 1] );
+                    //console.log("CSS Exfil Dynamic Scan: ");
+                    //var style_hash = btoa(mutation.addedNodes[0]);
+                    //console.log(mutation.addedNodes[0]);
+                    //console.log(style_hash);
+                    //console.log(document.styleSheets[document.styleSheets.length - 1]);
+                    
+//console.log("--here1--");
+//console.log(mutation.addedNodes);
+//console.log(mutation.addedNodes[0].classList);
+                    if( (mutation.addedNodes.length > 0) )
+                    {
+                        console.log("Scan new node:");
+                        //console.log(mutation.addedNodes[0].getRootNode());
+
+    //tester  = document.createElement('style');
+    //tester.innerText = mutation.addedNodes[0].getRootNode().innerText;
+    //tester.className = "__css_exfil_protection_observer_styles";
+    //document.head.appendChild(tester);
+    //var tester_sheet = tester.sheet;
+    //console.log(tester_sheet);
+
+                        //console.log(mutation);
+
+                        scan_css_single( document.styleSheets[document.styleSheets.length - 1] );
+                        //scan_css_single( mutation.addedNodes[0].sheet );
+                    }
+                    else
+                    {
+                        //console.log("Scan mutation...");
+                    }
+//console.log("--here2--");
                 }
             }
         }, 0);
     });
 });
-*/
 
 // configuration of the observer:
-//var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
+var observer_config = { attributes: true, childList: true, subtree: true, characterData: true, attributeFilter: ["style","link"] }
 
 
 
@@ -562,7 +668,12 @@ window.addEventListener("DOMContentLoaded", function() {
     css_load_blocker  = document.createElement('style');
     css_load_blocker.innerText = buildContentLoadBlockerCSS();
     css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
-    document.head.appendChild(css_load_blocker);
+
+    // Null check to fix error that triggers when loading PDF's in browser
+    if(document.head != null)
+    {
+        document.head.appendChild(css_load_blocker);
+    }
 
     // Zero out badge
     chrome.extension.sendMessage(block_count.toString());
