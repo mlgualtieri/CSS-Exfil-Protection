@@ -19,6 +19,11 @@ The plugin became a Firefox :star2: Featured Extension in April 2019!
 ---
 
 ### Release notes
+#### Version 1.0.15
+Released Jun. 22, 2019
+* Bugfix to remove debug logs in Firefox (reported by unsmell)
+* Version bumped for Chrome to keep version parity, but no other edits to Chrome plugin.
+
 #### Version 1.0.14
 Released Jun. 17, 2019
 * Bugfix to properly scan relative path cross-domain stylesheets includes (issue #14) (reported by Firefox user CStark)
