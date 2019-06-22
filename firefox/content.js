@@ -100,7 +100,7 @@ function scan_css()
                         handleImportedCSS(rules);
 
                         // Parse origin stylesheet
-                        console.log("DOM stylesheet...");
+                        //console.log("DOM stylesheet...");
                         var _selectors = parseCSSRules(rules);
                         filter_css(_selectors[0], _selectors[1]);
 
@@ -116,7 +116,7 @@ function scan_css()
             else
             {
                 // Retrieve and parse cross domain stylesheet
-                console.log("Cross domain stylesheet: "+ sheets[i].href);
+                //console.log("Cross domain stylesheet: "+ sheets[i].href);
                 incrementSanitize();
                 getCrossDomainCSS(sheets[i]);
             }
@@ -128,7 +128,7 @@ function scan_css()
             handleImportedCSS(rules);
 
             // Parse origin stylesheet
-            console.log("DOM stylesheet...");
+            //console.log("DOM stylesheet...");
             var _selectors = parseCSSRules(rules);
             filter_css(_selectors[0], _selectors[1]);
 
@@ -157,19 +157,19 @@ function handleImportedCSS(rules)
                 incrementSanitize();
 
                 // Found an imported CSS Stylesheet
-                console.log("Imported CSS...");
+                //console.log("Imported CSS...");
 
                 var _rules = getCSSRules(rules[r].styleSheet);
                 if(_rules == null)
                 {
                     // Parse imported cross domain sheet
-                    console.log("Imported Cross Domain CSS...");
+                    //console.log("Imported Cross Domain CSS...");
                     getCrossDomainCSS(rules[r].styleSheet);
                 }
                 else
                 {
                     // Parse imported DOM sheet
-                    console.log("Imported DOM CSS...");
+                    //console.log("Imported DOM CSS...");
                     var _selectors = parseCSSRules(_rules);
                     filter_css(_selectors[0], _selectors[1]);
                     decrementSanitize();
@@ -188,14 +188,14 @@ function getCSSRules(_sheet)
 	try 
 	{
         //Loading CSS
-	    console.log("Loading CSS...");
+	    //console.log("Loading CSS...");
 	    rules = _sheet.rules || _sheet.cssRules;
 	} 
 	catch(e) 
 	{
 	    if(e.name !== "SecurityError") 
 	    {
-            console.log("Error loading rules:");
+            //console.log("Error loading rules:");
             //console.log(e);
 	        //throw e;
 	    }
@@ -300,7 +300,7 @@ function filter_css(selectors, selectorcss)
 
 function getCrossDomainCSS(orig_sheet)
 {
-    console.log(orig_sheet);
+    //console.log(orig_sheet);
 	var rules;
     var url = orig_sheet.href;
 
@@ -449,12 +449,12 @@ function getCrossDomainCSS(orig_sheet)
 function disableCSS(_sheet)
 {
     //console.log("CSS Disabled State: "+ _sheet.disabled);
-    console.log("Disabled CSS: "+ _sheet.href);
+    //console.log("Disabled CSS: "+ _sheet.href);
     _sheet.disabled = true;
 }
 function enableCSS(_sheet)
 {
-    console.log("Enabled CSS: "+ _sheet.href);
+    //console.log("Enabled CSS: "+ _sheet.href);
 
     // Check to ensure sheet should be enabled before we do
     if( !disabled_css_hash[ window.btoa(_sheet.href) ] )
@@ -482,7 +482,7 @@ function disableAndRemoveCSS(_sheet)
 function incrementSanitize()
 {
     sanitize_inc++;
-    console.log("Increment: "+ sanitize_inc);
+    //console.log("Increment: "+ sanitize_inc);
 }
 function decrementSanitize()
 {
@@ -491,7 +491,7 @@ function decrementSanitize()
     {
         disableAndRemoveCSS(css_load_blocker);
     }
-    console.log("Decrement: "+ sanitize_inc);
+    //console.log("Decrement: "+ sanitize_inc);
 }
 
 function buildContentLoadBlockerCSS()
