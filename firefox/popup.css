@@ -58,3 +58,13 @@ label {
     height:48px;
 }
 
+@media (prefers-color-scheme: dark) {
+	body { 
+    	color: #ffffff;
+    	background-color: #323234; 
+  	}
+
+	a {
+    	color: #ffffff;
+	}
+}
