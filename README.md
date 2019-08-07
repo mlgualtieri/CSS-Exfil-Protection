@@ -11,7 +11,7 @@ Information about the plugins and the CSS Exfil attack can be found here:
 * [Stealing Data With CSS: Attack and Defense](https://www.mike-gualtieri.com/posts/stealing-data-with-css-attack-and-defense)
 * [CSS Exfil Vulnerability Tester](https://www.mike-gualtieri.com/css-exfil-vulnerability-tester)
 
-The plugin became a Firefox :star2: Featured Extension in April 2019!
+The plugin was named a Firefox :star2: Featured Extension in April 2019!
 
 [![Firefox Rating](https://img.shields.io/amo/stars/css-exfil-protection.svg?label=Firefox)](https://addons.mozilla.org/en-US/firefox/addon/css-exfil-protection/)
 [![Chrome Rating](https://img.shields.io/chrome-web-store/stars/ibeemfhcbbikonfajhamlkdgedmekifo.svg?label=Chrome)](https://chrome.google.com/webstore/detail/css-exfil-protection/ibeemfhcbbikonfajhamlkdgedmekifo)
@@ -19,6 +19,10 @@ The plugin became a Firefox :star2: Featured Extension in April 2019!
 ---
 
 ### Release notes
+#### Version 1.0.16
+Released Aug. 7, 2019
+* Integrated aelisya's patches to add dark theme support and increased target link security
+
 #### Version 1.0.15
 Released Jun. 22, 2019
 * Bugfix to remove debug logs in Firefox (reported by unsmell)

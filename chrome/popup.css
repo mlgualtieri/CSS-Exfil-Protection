@@ -59,12 +59,13 @@ label {
 }
 
 @media (prefers-color-scheme: dark) {
-	body { 
-    	color: #ffffff;
-    	background-color: #323234; 
-  	}
+    body { 
+        color: #ffffff;
+        background-color: #323234; 
+    }
 
 	a {
-    	color: #ffffff;
-	}
+        color: #ffffff;
+    }
 }
+
