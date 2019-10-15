@@ -43,6 +43,12 @@
  
   "background": {
     "scripts": ["background.js"]
-  }
+  },
 
+  "applications": {
+    "gecko": {
+      "id": "{7fc8ef53-24ec-4205-87a4-1e745953bb0d}"
+    }
+  }
+  
 }
