@@ -19,6 +19,11 @@ The plugin was named a Firefox :star2: Featured Extension in April 2019!
 ---
 
 ### Release notes
+#### Version 1.0.17
+Released Oct. 15, 2019
+* Added a privacy policy due to the new Chrome Addon Store policy
+* Integrated polyzen's patch to allow for Firefox addon side-loading (for Arch Linux AUR repository)
+
 #### Version 1.0.16
 Released Aug. 7, 2019
 * Integrated aelisya's patches to add dark theme support and increased target link security
