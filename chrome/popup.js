@@ -1,5 +1,14 @@
 // Example: https://developer.chrome.com/extensions/options
 
+// Initialise the extension with data from language
+document.title = chrome.i18n.getMessage('appName');
+document.getElementById('appName').innerHTML = chrome.i18n.getMessage('appName');
+document.getElementById('checkboxEnablingText').innerHTML = chrome.i18n.getMessage('checkboxEnablingText');
+var version = document.getElementById('version'); // Save it in variable because search id is slower than a variable and i have to reuse it.
+version.textContent += chrome.i18n.getMessage('version');
+version.textContent += " " + chrome.runtime.getManifest().version;
+document.getElementById('tester').textContent = chrome.i18n.getMessage('about');
+document.getElementById('privacy').textContent = chrome.i18n.getMessage('privacy');
 
 // Saves options to chrome.storage
 function save_options() 
