@@ -1,9 +1,10 @@
 {
   "manifest_version": 2,
  
-  "name": "CSS Exfil Protection",
+  "name": "__MSG_appName__",
   "version": "1.0.17",
-  "description": "Guard against CSS data exfiltration attacks.",
+  "description": "__MSG_appDesc__",
+  "default_locale" : "en",
 
   "content_security_policy": "script-src 'self'; object-src 'self'; style-src 'self'",
 
