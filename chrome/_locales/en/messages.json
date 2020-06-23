@@ -1,0 +1,26 @@
+{
+  "appName": {
+    "message": "CSS Exfil Protection",
+    "description": "The title of the application, displayed in the web store."
+  },
+  "appDesc": {
+    "message": "Guard against CSS data exfiltration attacks.", 
+    "description": "The description of the application, displayed in the web store."
+  },
+  "checkboxEnablingText": {
+	"message": "Enable CSS Exfil Protection ?",
+	"description": "The text showed to the user for enabling the security (or not) in the popup."
+  },
+  "version": {
+	"message": "version",
+	"description": "Change this only if in the languages you translate version is writter with another spelling."
+  },
+  "about": {
+	"message": "About CSS Exfil Protection",
+	"description": "The text link of the about in the popup."
+  },
+  "privacy": {
+	"message": "Privacy",
+	"description": "The text link of the privacy in the popup."
+  }
+}
