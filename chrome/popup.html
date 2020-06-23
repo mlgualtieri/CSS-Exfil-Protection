@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CSS Exfil Protection Options</title>
+  <title></title>
   <link href="popup.css" rel="stylesheet" type="text/css">
 </head>
 
@@ -12,21 +12,19 @@
                 <img class="plugin-icon" alt="icon" src="icons/css-exfil-icon.svg"/>
             </td>
             <td>
-                <h1 class="no_margin_padding_bottom">CSS Exfil Protection</h1>
-                <h6 class="version">Version 1.0.17</h6>
+                <h1 id="appName" class="no_margin_padding_bottom"></h1>
+                <h6 id="version" class="version"></h6>
             </td>
         </tr>
     </table>
-    <label>
-        Enable CSS Exfil Protection?
-        <input type="checkbox" id="enable_plugin" name="enable_plugin" />
-    </label>
+    <label id="checkboxEnablingText"></label>
+	<input type="checkbox" id="enable_plugin" name="enable_plugin" />
 
     <footer>
-        <a target="_blank" rel="noreferrer noopener" href="https://www.mike-gualtieri.com/css-exfil-vulnerability-tester"/>About CSS Exfil Protection</a><br/>
-        <a target="_blank" rel="noreferrer noopener" href="https://raw.githubusercontent.com/mlgualtieri/CSS-Exfil-Protection/master/PRIVACY.txt"/>Privacy</a>
+        <a id="tester" target="_blank" rel="noreferrer noopener" href="https://www.mike-gualtieri.com/css-exfil-vulnerability-tester"/></a><br/>
+        <a id="privacy" target="_blank" rel="noreferrer noopener" href="https://raw.githubusercontent.com/mlgualtieri/CSS-Exfil-Protection/master/PRIVACY.txt"/></a>
     </footer>
 
-  <script type="text/javascript" src="popup.js"></script>
+	<script type="text/javascript" src="popup.js"></script>
 </body>
 </html>
