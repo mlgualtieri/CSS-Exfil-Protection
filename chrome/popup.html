@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CSS Exfil Protection Options</title>
-  <link href="popup.css" rel="stylesheet" type="text/css">
+    <meta charset="utf-8">
+    <title>CSS Exfil Protection Options</title>
+    <link href="popup.css" rel="stylesheet" type="text/css">
+    <link href="slider-toggle.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
@@ -13,14 +15,22 @@
             </td>
             <td>
                 <h1 class="no_margin_padding_bottom">CSS Exfil Protection</h1>
-                <h6 class="version">Version 1.0.17</h6>
+                <h6 class="version">Version 1.0.18</h6>
             </td>
         </tr>
     </table>
-    <label>
-        Enable CSS Exfil Protection?
-        <input type="checkbox" id="enable_plugin" name="enable_plugin" />
-    </label>
+    <table>
+        <tr>
+            <td>
+                <span class="label-option">Enable CSS Exfil Protection?</span>
+            </td>
+            <td>
+                <label class="switch">
+                    <input type="checkbox" id="enable_plugin" name="enable_plugin" />
+                    <span class="slider round"></span>
+                </label>
+            </td>
+    </table>
 
     <footer>
         <a target="_blank" rel="noreferrer noopener" href="https://www.mike-gualtieri.com/css-exfil-vulnerability-tester"/>About CSS Exfil Protection</a><br/>

@@ -1,3 +1,6 @@
+// CSS rules that will block the loading of risky CSS until it can be sanitized
+var css_load_blocker_code = "input,input ~ * { background-image:none !important; list-style: inherit !important; cursor: auto !important; content:normal !important; } input::before,input::after,input ~ *::before, input ~ *::after { content:normal !important; }";
+
 
 // Set badge with number of blocked resources
 chrome.runtime.onMessage.addListener(function(message, sender) {
@@ -25,6 +28,8 @@ chrome.runtime.onMessage.addListener(function(message, sender) {
         {
             chrome.browserAction.setBadgeText({text: message, tabId: sender.tab.id});
             chrome.browserAction.setBadgeBackgroundColor({ color: [255, 65, 54, 255] });
+            // Not a Chrome function and default is already white text
+            //chrome.browserAction.setBadgeTextColor({color: [255,255,255,255]});
         }
         else
         {
