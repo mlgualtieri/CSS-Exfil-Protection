@@ -232,12 +232,17 @@ function parseCSSRules(rules)
             // 1) Match a value attribute selector which appears to be parsing text 
             // 2) Calls a remote URL (https, http, //)
             // 3) The URL is not an xmlns property
+            // 4) If the URL is called by //, exclude base64 encoded data
             if( 
                 ( (selectorText != null) && (cssText != null) && 
                   (selectorText.indexOf('value') !== -1) && (selectorText.indexOf('=') !== -1) ) &&
                 ( (cssText.indexOf('url') !== -1) && 
-                    ( (cssText.indexOf('https://') !== -1) || (cssText.indexOf('http://') !== -1) || (cssText.indexOf('//') !== -1) ) && 
-                    (cssText.indexOf("xmlns='http://") === -1) 
+                    ( 
+                        (cssText.indexOf('https://') !== -1) || 
+                        (cssText.indexOf('http://') !== -1)  || 
+                        ( (cssText.indexOf('//') !== -1) && (cssText.indexOf(";base64,") === -1) )
+                    ) && 
+                    (cssText.indexOf("xmlns='http://") === -1)
                 )
               )
             {
@@ -547,6 +552,9 @@ var seen_url          = [];     // Keep track of scanned cross-domain URL's
 var seen_hash         = {};
 var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
 
+//var check_setBlockingCSS    = false;    // We only need to add and remove the blocking CSS code once
+//var check_removeBlockingCSS = false;    // These vars check the state of the calls
+
 
 
 // Create an observer instance to monitor CSS injection
@@ -655,61 +663,78 @@ var observer_config = { attributes: true, childList: true, subtree: true, charac
 // Run as soon as the DOM has been loaded
 window.addEventListener("DOMContentLoaded", function() {
 
-    // Check if the CSS sheet is disabled by default
-    for (var i=0; i < document.styleSheets.length; i++) 
-	{
-        //console.log("CSS sheet: "+ document.styleSheets[i].href);
-        //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
-        //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
-        disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
-    }
-
-    // Create temporary stylesheet that will block early loading of resources we may want to block
-    css_load_blocker  = document.createElement('style');
-    css_load_blocker.innerText = buildContentLoadBlockerCSS();
-    css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
-
-    // Null check to fix error that triggers when loading PDF's in browser
-    if(document.head != null)
-    {
-        document.head.appendChild(css_load_blocker);
-    }
-
-    // Zero out badge
-    chrome.extension.sendMessage(block_count.toString());
-
     chrome.storage.local.get({
         enable_plugin: 1
     }, function(items) {
 
 	    if(items.enable_plugin == 1)
         {
-            // Create stylesheet that will contain our filtering CSS (if any is necessary)
-            filter_sheet = document.createElement('style');
-            filter_sheet.className = "__css_exfil_protection_filtered_styles";
-            filter_sheet.innerText = "";
-            document.head.appendChild(filter_sheet);
+            // Check if the CSS sheet is disabled by default
+            for (var i=0; i < document.styleSheets.length; i++) 
+	        {
+                //console.log("CSS sheet: "+ document.styleSheets[i].href);
+                //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
+                //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
+                disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
+            }
 
-            // Increment once before we scan, just in case decrement is called too quickly
-            incrementSanitize();
+            // Create temporary stylesheet that will block early loading of resources we may want to block
+            css_load_blocker  = document.createElement('style');
+            css_load_blocker.innerText = buildContentLoadBlockerCSS();
+            css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
 
-            scan_css();
+            // Null check to fix error that triggers when loading PDF's in browser
+            if(document.head != null)
+            {
+                document.head.appendChild(css_load_blocker);
+            }
 
-            // monitor document for delayed CSS injection
-            //observer.observe(document, observer_config);
-            
-            // ensure icon is enabled
-            chrome.runtime.sendMessage('enabled');
+            // Zero out badge
+            chrome.extension.sendMessage(block_count.toString());
+
+            chrome.storage.local.get({
+                enable_plugin: 1
+            }, function(items) {
+
+	            if(items.enable_plugin == 1)
+                {
+                    // Create stylesheet that will contain our filtering CSS (if any is necessary)
+                    filter_sheet = document.createElement('style');
+                    filter_sheet.className = "__css_exfil_protection_filtered_styles";
+                    filter_sheet.innerText = "";
+                    document.head.appendChild(filter_sheet);
+
+                    // Increment once before we scan, just in case decrement is called too quickly
+                    incrementSanitize();
+
+                    scan_css();
+
+                    // monitor document for delayed CSS injection
+                    //observer.observe(document, observer_config);
+                    
+                    // ensure icon is enabled
+                    chrome.runtime.sendMessage('enabled');
+                }
+                else
+	            {
+                    // This else likely doesn't get run anymore 
+                    // Can likely comment out and later remove
+
+                    //console.log("Disabling CSS Exfil Protection");
+                    css_load_blocker.disabled = true;
+                    css_load_blocker.parentNode.removeChild(css_load_blocker);
+
+                    // disable icon
+                    chrome.runtime.sendMessage('disabled');
+	            }
+            });
         }
         else
-	    {
-            //console.log("Disabling CSS Exfil Protection");
-            css_load_blocker.disabled = true;
-            css_load_blocker.parentNode.removeChild(css_load_blocker);
-
+        {
+            // Plugin is disabled... enable page without sanitizing
             // disable icon
-            chrome.runtime.sendMessage('disabled');
-	    }
+            browser.runtime.sendMessage('disabled');
+        }
     });
 
 

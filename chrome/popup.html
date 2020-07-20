@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title></title>
-  <link href="popup.css" rel="stylesheet" type="text/css">
+    <meta charset="utf-8">
+    <title></title>
+    <link href="popup.css" rel="stylesheet" type="text/css">
+    <link href="slider-toggle.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
@@ -17,9 +19,18 @@
             </td>
         </tr>
     </table>
-    <label id="checkboxEnablingText"></label>
-	<input type="checkbox" id="enable_plugin" name="enable_plugin" />
-
+    <table>
+        <tr>
+            <td>
+                <span id="checkboxEnablingText" class="label-option"></span>
+            </td>
+            <td>
+                <label class="switch" >
+                    <input type="checkbox" id="enable_plugin" name="enable_plugin" />
+                    <span class="slider round"></span>
+                </label>
+            </td>
+    </table>
     <footer>
         <a id="tester" target="_blank" rel="noreferrer noopener" href="https://www.mike-gualtieri.com/css-exfil-vulnerability-tester"/></a><br/>
         <a id="privacy" target="_blank" rel="noreferrer noopener" href="https://raw.githubusercontent.com/mlgualtieri/CSS-Exfil-Protection/master/PRIVACY.txt"/></a>
