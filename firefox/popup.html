@@ -19,7 +19,7 @@
             </td>
         </tr>
     </table>
-    <table>
+    <table class="width100">
         <tr>
             <td>
                 <span class="label-option">Enable CSS Exfil Protection?</span>
@@ -30,6 +30,28 @@
                     <span class="slider round"></span>
                 </label>
             </td>
+        </tr>
+    </table>
+    <table class="width100">
+        <tr>
+            <td>
+                <span class="label-option">Sanitize this domain?</span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span id="thedomain"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <select id="domainsetting">
+                    <option value="0">Always Scan / Always Sanitize (default)</option>
+                    <option value="1">Always Scan / Never Sanitize</option>
+                    <option value="2">Never Scan / Never Sanitize</option>
+                </select>
+            </td>
+        </tr>
     </table>
 
     <footer>

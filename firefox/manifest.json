@@ -10,7 +10,8 @@
   "permissions": [
     "http://*/",
     "https://*/",
-    "storage"
+    "storage",
+    "tabs"
   ],
 
   "homepage_url": "https://www.mike-gualtieri.com/css-exfil-vulnerability-tester",
