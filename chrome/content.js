@@ -1,3 +1,20 @@
+// Set up message listener for background.js
+// Due to Chrome 85 changes, cross domain CSS requests 
+// need to be handled in background.js
+chrome.runtime.onMessage.addListener(function(response) {
+	//console.log(response);
+
+    if( (typeof response.responseText !== "undefined") && 
+        (typeof response.url !== "undefined") )
+    {
+        //console.log(response.responseText);
+        handleCrossDomainCSS(response.url, response.responseText);
+    }
+
+    // indicate async listening
+	return true;
+});
+
 
 // Only scan single stylesheet
 function scan_css_single(css_stylesheet)
@@ -279,6 +296,22 @@ function getCrossDomainCSS(orig_sheet)
         }
     }
 
+
+    // test message receive from background
+    // here we will want to send the URL and do xhr in background
+    //chrome.runtime.sendMessage({url: url}, function(response) {
+    //	      console.log("resp2 "+ response);
+    //});
+
+    
+    // Track URL's being scanned and their associated original stylesheet
+    cross_domain_sheet_hash[ window.btoa(url) ] = orig_sheet;
+
+    // Send url to background.js to perform cross-domain xhr request
+    chrome.runtime.sendMessage({url: url});
+
+// Will be eliminated for Chrome 85
+/***************
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.onreadystatechange = function() 
@@ -408,7 +441,136 @@ function getCrossDomainCSS(orig_sheet)
         }
     }
     xhr.send();
+******************/
 }
+
+
+
+function handleCrossDomainCSS(url, xhr_responseText)
+{
+	var rules;
+    var orig_sheet = cross_domain_sheet_hash[ window.btoa(url) ];
+
+
+    // Create stylesheet from remote CSS
+    var sheet = document.createElement('style');
+    sheet.innerText = xhr_responseText;
+
+    // Get all import rules
+    var matches = xhr_responseText.match( /@import.*?;/g );
+    var replaced = xhr_responseText;
+
+    // Get URL path of remote stylesheet (url minus the filename)
+    var _a  = document.createElement("a");
+    _a.href = url;
+    var _pathname = _a.pathname.substring(0, _a.pathname.lastIndexOf('/')) + "/";
+    var import_url_path = _a.origin + _pathname;
+
+    // Scan through all import rules
+    // if calling a relative resource, edit to include the original URL path
+    if(matches != null)
+    {
+        for(var i=0; i < matches.length; i++)
+        {
+            // Only run if import is not calling a remote http:// or https:// resource
+            if( (matches[i].indexOf('://') === -1) )
+            {
+                // Get file/path text from import rule (first text that's between quotes or parentheses)
+                var import_file = matches[i].match(/['"\(](.*?)['"\)]/g);
+
+                if(import_file != null)
+                {
+                    if(import_file.length > 0)
+                    {
+                        var _import_file = import_file[0];
+
+                        // Remove quotes and parentheses
+                        _import_file = _import_file.replace(/['"\(\)]/g,'');
+
+                        // Trim whitespace
+                        _import_file = _import_file.trim();
+
+                        // Remove any URL parameters
+                        _import_file = _import_file.split("?")[0];
+
+                        // Replace filename with full url path
+                        var regex = new RegExp(_import_file);
+                        replaced  = replaced.replace(regex, import_url_path + _import_file);
+                    }
+                }
+            }
+        }
+    }
+
+    // Add CSS to sheet and append to head so we can scan the rules
+    sheet.innerText = replaced;
+    document.head.appendChild(sheet);
+    
+
+    // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
+    // instead get the stylesheet directly from the temporary object (sheet.sheet)
+    //var sheets = document.styleSheets;
+    //rules = getCSSRules(sheets[ sheets.length - 1]);
+    rules = getCSSRules(sheet.sheet);
+
+
+    // if rules is null is likely means we triggered a 
+    // timing error where the new CSS sheet isn't ready yet
+    if(rules == null)
+    {
+        // Keep checking every 10ms until rules have become available
+        setTimeout(function checkRulesInit() { 
+            //rules = getCSSRules(sheets[ sheets.length - 1]);
+            rules = getCSSRules(sheet.sheet);
+                
+            if(rules == null)
+            {
+                setTimeout(checkRulesInit, 10);
+            }
+            else
+            {
+                handleImportedCSS(rules);
+
+                var _selectors = parseCSSRules(rules);
+                filter_css(_selectors[0], _selectors[1]);
+
+                // Remove tmp stylesheet
+                sheet.disabled = true;
+                sheet.parentNode.removeChild(sheet);
+
+                if(checkCSSDisabled(orig_sheet))
+                {
+                    enableCSS(orig_sheet);
+                }
+                decrementSanitize();
+                return rules;
+            }
+
+        }, 10);
+    }
+    else
+    {
+        handleImportedCSS(rules);
+
+        var _selectors = parseCSSRules(rules);
+        filter_css(_selectors[0], _selectors[1]);
+
+        // Remove tmp stylesheet
+        sheet.disabled = true;
+        sheet.parentNode.removeChild(sheet);
+
+        if(checkCSSDisabled(orig_sheet))
+        {
+            enableCSS(orig_sheet);
+        }
+        decrementSanitize();
+        return rules;
+    }
+
+}
+
+
+
 
 
 
@@ -516,6 +678,7 @@ var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 var seen_hash         = {};
 var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
+var cross_domain_sheet_hash = {}; // Keep track of cross domain stylesheets while they are being scanned
 
 // Human readable settings errors
 var DOMAIN_SETTINGS_DEFAULT             = 0;
