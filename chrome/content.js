@@ -56,14 +56,6 @@ function scan_css()
 
         if(rules == null)
         {
-            // Original codeblock... for removal
-            /*
-            // Retrieve and parse cross-domain stylesheet
-            //console.log("Cross domain stylesheet: "+ sheets[i].href);
-            incrementSanitize();
-            getCrossDomainCSS(sheets[i]);
-            */
-
             if(sheets[i].href == null)
             {
                 // If we reach here it's due to a CSS load timing error
@@ -147,16 +139,6 @@ function handleImportedCSS(rules)
                 {
                     // Parse imported cross domain sheet
                     //console.log("Imported Cross Domain CSS...");
-
-                    //Debug: for removal
-                    /*
-                    console.log(rules[r]);
-                    console.log(rules[r].styleSheet);
-                    for (var property in rules[r]) {
-                        console.log( property + ': ' + rules[r][property]+'; ' );
-                    }
-                    */
-
                     getCrossDomainCSS(rules[r].styleSheet);
                 }
                 else
@@ -363,28 +345,6 @@ function getCrossDomainCSS(orig_sheet)
             //var sheets = document.styleSheets;
             //rules = getCSSRules(sheets[ sheets.length - 1]);
             rules = getCSSRules(sheet.sheet);
-
-            /*
-            // MG: Old code, for removal
-            handleImportedCSS(rules);
-
-            var _selectors = parseCSSRules(rules);
-            filter_css(_selectors[0], _selectors[1]);
-
-            // Remove stylesheet
-            sheet.disabled = true;
-            sheet.parentNode.removeChild(sheet);
-
-            
-            if(checkCSSDisabled(orig_sheet))
-            {
-                enableCSS(orig_sheet);
-            }
-
-            decrementSanitize();
-            
-            return rules;
-            */
 
 
             // if rules is null is likely means we triggered a 
