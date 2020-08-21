@@ -509,6 +509,8 @@ function checkCSSDisabled(_sheet)
 {
     return _sheet.disabled;
 }
+
+// Function no longer used -- pending removal
 function disableAndRemoveCSS(_sheet)
 {
     _sheet.disabled = true;

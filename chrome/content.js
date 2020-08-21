@@ -511,10 +511,13 @@ function checkCSSDisabled(_sheet)
 }
 function disableAndRemoveCSS(_sheet)
 {
-    _sheet.disabled = true;
-    if(_sheet.parentNode != null)
+    if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
     {
-        _sheet.parentNode.removeChild(_sheet);
+        _sheet.disabled = true;
+        if(_sheet.parentNode != null)
+        {
+            _sheet.parentNode.removeChild(_sheet);
+        }
     }
 }
 
