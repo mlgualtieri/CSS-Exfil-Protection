@@ -64,9 +64,10 @@ chrome.runtime.onMessage.addListener(function(message, sender) {
                 if (xhr.readyState == 4) 
                 {
                     //console.log(xhr.responseText);
-                    chrome.tabs.sendMessage(sender.tab.id, {url: message.url, responseText: xhr.responseText}, function(response) {
-                        console.log(response);
-                    });
+                    //chrome.tabs.sendMessage(sender.tab.id, {url: message.url, responseText: xhr.responseText}, function(response) {
+                    //    console.log(response);
+                    //});
+                    chrome.tabs.sendMessage(sender.tab.id, {url: message.url, responseText: xhr.responseText});
                 }
             }
             xhr.send();

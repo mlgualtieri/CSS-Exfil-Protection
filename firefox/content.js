@@ -613,9 +613,21 @@ window.addEventListener("DOMContentLoaded", function() {
             if( (typeof items.domainsettingsdb[domain] === "undefined") || 
                 (items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE) )
             {
+
+                // Zero out badge
+                browser.runtime.sendMessage(block_count.toString());
+
                 if(items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE)
                 {
                     DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE;
+
+                    // use reenabled icon in this state
+                    browser.runtime.sendMessage('reenabled');
+                }
+                else
+                {
+                    // ensure icon is enabled
+                    browser.runtime.sendMessage('enabled');
                 }
 
                 // Check if the CSS sheet is disabled by default
@@ -642,11 +654,6 @@ window.addEventListener("DOMContentLoaded", function() {
                 //}
 
 
-                // Zero out badge
-                browser.runtime.sendMessage(block_count.toString());
-
-                // ensure icon is enabled
-                browser.runtime.sendMessage('enabled');
 
                 //// This enabled check can likely be removed in the future
                 //// Keep for now in case we need to revert the earlier enabled check
