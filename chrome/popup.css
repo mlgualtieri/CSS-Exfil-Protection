@@ -77,3 +77,14 @@ label {
         color: #ffffff;
     }
 }
+
+
+select {
+    width:100%;
+    cursor:pointer;
+}
+.width100 {
+    width:100%;
+}
+
+

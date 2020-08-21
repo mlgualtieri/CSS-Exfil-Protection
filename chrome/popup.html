@@ -19,7 +19,7 @@
             </td>
         </tr>
     </table>
-    <table>
+    <table class="width100">
         <tr>
             <td>
                 <span class="label-option">Enable CSS Exfil Protection?</span>
@@ -30,6 +30,44 @@
                     <span class="slider round"></span>
                 </label>
             </td>
+        </tr>
+    </table>
+    <table class="width100">
+        <tr>
+            <td>
+                <span class="label-option">Sanitize this domain?</span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span id="thedomain"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <select id="domainsetting">
+                    <option value="0">Always Scan / Always Sanitize (default)</option>
+                    <option value="1">Always Scan / Never Sanitize</option>
+                    <option value="2">Never Scan / Never Sanitize</option>
+                </select>
+            </td>
+        </tr>
+        <!--
+        <tr>
+            <td>
+                <div class="switch-toggle">
+                    <input id="on" name="state-d" type="radio" checked="" />
+                    <label class="green" for="on">&nbsp;</label>
+
+                    <input id="na" name="state-d" type="radio" checked="checked" />
+                    <label class="yellow" for="na" class="disabled">&nbsp;</label>
+
+                    <input id="off" name="state-d" type="radio" />
+                    <label class="red" for="off">&nbsp;</label>
+                </div>
+            </td>
+        </tr>
+        -->
     </table>
 
     <footer>

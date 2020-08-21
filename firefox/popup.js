@@ -107,5 +107,3 @@ browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
 
 }, console.error);
 
-
-

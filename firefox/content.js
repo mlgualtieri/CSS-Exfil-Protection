@@ -306,7 +306,7 @@ function filter_css(selectors, selectorcss)
     // Loop through found selectors and override CSS
     for(s in selectors)
     {
-        if(DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_DEFAULT)
+        if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
         {
             if( selectorcss[s].indexOf('background') !== -1 )
             {
@@ -604,7 +604,6 @@ window.addEventListener("DOMContentLoaded", function() {
 
 	    if(items.enable_plugin == 1)
         {
-
             let domain = window.location.hostname;
 
             // Undefined means domain is using default settings
@@ -658,7 +657,7 @@ window.addEventListener("DOMContentLoaded", function() {
                     //{
                         // Plugin is enabled
 
-                        if(DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_DEFAULT)
+                        if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
                         {
                             // Create stylesheet that will contain our filtering CSS (if any is necessary)
                             filter_sheet = document.createElement('style');

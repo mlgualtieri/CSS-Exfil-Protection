@@ -62,3 +62,41 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+
+/************************/
+.switch-toggle {
+  float: left;
+  background-color: #ccc;
+  border-radius: 24px;
+  padding-left:4px;
+  padding-right:4px;
+  height:24px;
+}
+.switch-toggle input {
+  position: absolute;
+  opacity: 0;
+}
+.switch-toggle input + label {
+  padding: 3px;
+  padding-bottom: 4px;
+  float:left;
+  color: #fff;
+  cursor: pointer;
+  width:20px;
+  transition: .4s;
+  border-radius: 24px;
+}
+.switch-toggle input:checked + label.green {
+  background: green;
+  transition: .4s;
+}
+.switch-toggle input:checked + label.red {
+  background: red;
+}
+.switch-toggle input:checked + label.yellow {
+  background: yellow;
+}
+/************************/
+
+
