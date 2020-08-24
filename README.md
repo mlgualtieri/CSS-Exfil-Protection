@@ -19,6 +19,14 @@ The plugin was named a Firefox :star2: Featured Extension in April 2019!
 ---
 
 ### Release notes
+#### Version 1.1.0
+Released Aug. 24, 2020
+* Big update, which moves the project to a 1.1.0 point release
+* For Chrome 85 compatibility: Migrating AJAX xhr requests for cross-domain stylesheets to background.js (behavior in Firefox is unchanged)
+* Perform disabled check earlier in execution to prevent any interaction by plugin with websites when disabled
+* Style enhancements to popup.html
+* NEW user controlled domain settings!  Users can now control scan and sanitize based on a site-by-site basis.  Have a problem with a site?  Disable either scan and/or sanitize and the plugin will avoid interaction with any CSS loaded by the website. Bug reports for site-related problems are still welcome!
+
 #### Version 1.0.17
 Released Oct. 15, 2019
 * Added a privacy policy due to the new Chrome Addon Store policy
