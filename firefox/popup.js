@@ -9,6 +9,10 @@ version.textContent += chrome.i18n.getMessage('version');
 version.textContent += " " + chrome.runtime.getManifest().version;
 document.getElementById('tester').textContent = chrome.i18n.getMessage('about');
 document.getElementById('privacy').textContent = chrome.i18n.getMessage('privacy');
+document.getElementById('sanetize').textContent = chrome.i18n.getMessage('sanetize');
+document.getElementById('val1').textContent = chrome.i18n.getMessage('Value1Sanetize');
+document.getElementById('val2').textContent = chrome.i18n.getMessage('Value2Sanetize');
+document.getElementById('val3').textContent = chrome.i18n.getMessage('Value3Sanetize');
 
 // Saves options to browser.storage
 function save_options() 
