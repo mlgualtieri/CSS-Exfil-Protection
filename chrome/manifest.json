@@ -3,7 +3,6 @@
  
   "name": "__MSG_appName__",
   "version": "1.1.0",
-  "description": "Guard against CSS data exfiltration attacks.",
   "description": "__MSG_appDesc__",
   "default_locale" : "en",
 
