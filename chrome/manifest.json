@@ -6,7 +6,7 @@
   "description": "__MSG_appDesc__",
   "default_locale" : "en",
 
-  "content_security_policy": "default-src 'self'; connect-src https://*",
+  "content_security_policy": "default-src 'self'; connect-src https://* data:",
 
   "permissions": [
     "http://*/",
