@@ -22,5 +22,21 @@
   "privacy": {
 	"message": "Privacy",
 	"description": "The text link of the privacy in the popup."
+  },
+  "sanetize": {
+	"message": "Sanitize this domain?",
+	"description": "The text who ask if the extension must sanetize the domain."
+  },
+  "Value1Sanetize": {
+	"message": "Always Scan / Always Sanitize (default)",
+	"description": "Value 1 of the text who ask if the extension must sanetize the domain."
+  },
+  "Value2Sanetize": {
+	"message": "Always Scan / Never Sanitize",
+	"description": "Value 2 of the text who ask if the extension must sanetize the domain."
+  },
+  "Value3Sanetize": {
+	"message": "Never Scan / Never Sanitize",
+	"description": "Value 3 of the text who ask if the extension must sanetize the domain."
   }
 }
