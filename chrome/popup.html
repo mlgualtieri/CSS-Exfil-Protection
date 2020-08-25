@@ -14,12 +14,12 @@
                 <img class="plugin-icon" alt="icon" src="icons/css-exfil-icon.svg"/>
             </td>
             <td>
-                <h1 id="appName" class="no_margin_padding_bottom"></h1>
-                <h6 id="version" class="version"></h6>
+                <h1 id="appName" class="no_margin_padding_bottom">CSS Exfil Protection</h1>
+                <h6 id="version" class="version">Version 1.1.0</h6>
             </td>
         </tr>
     </table>
-    <table>
+    <table class="width100">
         <tr>
             <td>
                 <span id="checkboxEnablingText" class="label-option"></span>
@@ -30,6 +30,44 @@
                     <span class="slider round"></span>
                 </label>
             </td>
+        </tr>
+    </table>
+    <table class="width100">
+        <tr>
+            <td>
+                <span class="label-option">Sanitize this domain?</span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span id="thedomain"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <select id="domainsetting">
+                    <option value="0">Always Scan / Always Sanitize (default)</option>
+                    <option value="1">Always Scan / Never Sanitize</option>
+                    <option value="2">Never Scan / Never Sanitize</option>
+                </select>
+            </td>
+        </tr>
+        <!--
+        <tr>
+            <td>
+                <div class="switch-toggle">
+                    <input id="on" name="state-d" type="radio" checked="" />
+                    <label class="green" for="on">&nbsp;</label>
+
+                    <input id="na" name="state-d" type="radio" checked="checked" />
+                    <label class="yellow" for="na" class="disabled">&nbsp;</label>
+
+                    <input id="off" name="state-d" type="radio" />
+                    <label class="red" for="off">&nbsp;</label>
+                </div>
+            </td>
+        </tr>
+        -->
     </table>
     <footer>
         <a id="tester" target="_blank" rel="noreferrer noopener" href="https://www.mike-gualtieri.com/css-exfil-vulnerability-tester"/></a><br/>

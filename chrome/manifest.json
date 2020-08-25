@@ -2,7 +2,7 @@
   "manifest_version": 2,
  
   "name": "__MSG_appName__",
-  "version": "1.0.18",
+  "version": "1.1.0",
   "description": "Guard against CSS data exfiltration attacks.",
   "description": "__MSG_appDesc__",
   "default_locale" : "en",
@@ -12,7 +12,8 @@
   "permissions": [
     "http://*/",
     "https://*/",
-    "storage"
+    "storage",
+    "tabs"
   ],
 
   "homepage_url": "https://www.mike-gualtieri.com/css-exfil-vulnerability-tester",

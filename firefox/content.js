@@ -2,7 +2,8 @@
 // This replaces the previous css_load_blocker functionality
 // Unfortunately we can't do the same in Chrome since it lacks the removeCSS API call
 browser.storage.local.get({
-    enable_plugin: 1
+    enable_plugin: 1,
+    domainsettingsdb: {}
 }, function(items) {
 
     if(items.enable_plugin == 1)
@@ -10,11 +11,19 @@ browser.storage.local.get({
         // Null check to fix error that triggers when loading PDF's in browser
         if(document.head != null)
         {
-            //if(!check_setBlockingCSS)
-            //{
+            // Only do load blocking CSS if domain settings empty
+            let domain = window.location.hostname;
+
+            if(typeof items.domainsettingsdb[domain] === "undefined")
+            {
+                // If no domain settings have been set, proceed
                 browser.runtime.sendMessage('setBlockingCSS');
-                check_setBlockingCSS = true;
-            //}
+                //console.log("Doing load blocking CSS...");
+            }
+            else
+            {
+                //console.log("Skipping load blocking CSS...");
+            }
         }
     }
 });
@@ -297,21 +306,24 @@ function filter_css(selectors, selectorcss)
     // Loop through found selectors and override CSS
     for(s in selectors)
     {
-        if( selectorcss[s].indexOf('background') !== -1 )
+        if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
         {
-            filter_sheet.sheet.insertRule( selectors[s] +" { background:none !important; }", filter_sheet.sheet.cssRules.length);
-        }
-        if( selectorcss[s].indexOf('list-style') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
-        }
-        if( selectorcss[s].indexOf('cursor') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
-        }
-        if( selectorcss[s].indexOf('content') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
+            if( selectorcss[s].indexOf('background') !== -1 )
+            {
+                filter_sheet.sheet.insertRule( selectors[s] +" { background:none !important; }", filter_sheet.sheet.cssRules.length);
+            }
+            if( selectorcss[s].indexOf('list-style') !== -1 )
+            {
+                filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
+            }
+            if( selectorcss[s].indexOf('cursor') !== -1 )
+            {
+                filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
+            }
+            if( selectorcss[s].indexOf('content') !== -1 )
+            {
+                filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
+            }
         }
 
         // Causes performance issue if large amounts of resources are blocked, just use when debugging
@@ -497,6 +509,8 @@ function checkCSSDisabled(_sheet)
 {
     return _sheet.disabled;
 }
+
+// Function no longer used -- pending removal
 function disableAndRemoveCSS(_sheet)
 {
     _sheet.disabled = true;
@@ -518,11 +532,7 @@ function decrementSanitize()
     if(sanitize_inc <= 0)
     {
         //disableAndRemoveCSS(css_load_blocker);
-        //if(!check_removeBlockingCSS)
-        //{
-            browser.runtime.sendMessage('removeBlockingCSS');
-            check_removeBlockingCSS = true;
-        //}
+        browser.runtime.sendMessage('removeBlockingCSS');
     }
     //console.log("Decrement: "+ sanitize_inc);
 }
@@ -550,8 +560,17 @@ var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
 
-var check_setBlockingCSS    = false;    // We only need to add and remove the blocking CSS code once
-var check_removeBlockingCSS = false;    // These vars check the state of the calls
+// Human readable settings errors
+var DOMAIN_SETTINGS_DEFAULT             = 0;
+var DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE = 1;
+var DOMAIN_SETTINGS_NO_SCAN_NO_SANITIZE = 2;
+
+// We will store the current domain setting here
+var DOMAIN_SETTINGS_CURRENT = 0;
+
+
+//var check_setBlockingCSS    = false;    // We only need to add and remove the blocking CSS code once
+//var check_removeBlockingCSS = false;    // These vars check the state of the calls
 
 
 // MG Commenting for now due to performance issues
@@ -581,77 +600,113 @@ window.addEventListener("DOMContentLoaded", function() {
 
     // Check if plugin is enabled... earlier than previous versions
     browser.storage.local.get({
-        enable_plugin: 1
+        enable_plugin: 1,
+        domainsettingsdb: {}
     }, function(items) {
 
 	    if(items.enable_plugin == 1)
         {
-            // Check if the CSS sheet is disabled by default
-            for (var i=0; i < document.styleSheets.length; i++) 
-	        {
-                //console.log("CSS sheet: "+ document.styleSheets[i].href);
-                //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
-                //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
-                disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
-            }
+            let domain = window.location.hostname;
 
-     
-            // Previous css_load_blocker code, commented but to be removed later
-            //
-            // Create temporary stylesheet that will block early loading of resources we may want to block
-            //css_load_blocker  = document.createElement('style');
-            //css_load_blocker.innerText = buildContentLoadBlockerCSS();
-            //css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
+            // Undefined means domain is using default settings
+            // Continue if default or just scanning
+            if( (typeof items.domainsettingsdb[domain] === "undefined") || 
+                (items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE) )
+            {
 
-            // Null check to fix error that triggers when loading PDF's in browser
-            //if(document.head != null)
-            //{
-            //    document.head.appendChild(css_load_blocker);
-            //}
+                // Zero out badge
+                browser.runtime.sendMessage(block_count.toString());
 
-
-            // Zero out badge
-            browser.runtime.sendMessage(block_count.toString());
-
-            // This enabled check can likely be removed in the future
-            // Keep for now in case we need to revert the earlier enabled check
-            browser.storage.local.get({
-                enable_plugin: 1
-            }, function(items) {
-
-                if(items.enable_plugin)
+                if(items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE)
                 {
-                    // Plugin is enabled
+                    DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE;
 
-                    // Create stylesheet that will contain our filtering CSS (if any is necessary)
-                    filter_sheet = document.createElement('style');
-                    filter_sheet.className = "__css_exfil_protection_filtered_styles";
-                    filter_sheet.innerText = "";
-                    document.head.appendChild(filter_sheet);
-
-                    // Increment once before we scan, just in case decrement is called too quickly
-                    incrementSanitize();
-
-                    scan_css();
-
-                    // MG Commenting for now due to performance issues
-                    // monitor document for delayed CSS injection
-                    //observer.observe(document, observer_config);
-
-                    // ensure icon is enabled
-                    browser.runtime.sendMessage('enabled');
+                    // use reenabled icon in this state
+                    browser.runtime.sendMessage('reenabled');
                 }
                 else
                 {
-                    // Plugin is disabled... enable page without sanitizing
-                    //css_load_blocker.disabled = true;
-                    //css_load_blocker.parentNode.removeChild(css_load_blocker);
-
-                    // disable icon
-                    browser.runtime.sendMessage('disabled');
+                    // ensure icon is enabled
+                    browser.runtime.sendMessage('enabled');
                 }
-            });
 
+                // Check if the CSS sheet is disabled by default
+                for (var i=0; i < document.styleSheets.length; i++) 
+	            {
+                    //console.log("CSS sheet: "+ document.styleSheets[i].href);
+                    //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
+                    //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
+                    disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
+                }
+
+     
+                // Previous css_load_blocker code, commented but to be removed later
+                //
+                // Create temporary stylesheet that will block early loading of resources we may want to block
+                //css_load_blocker  = document.createElement('style');
+                //css_load_blocker.innerText = buildContentLoadBlockerCSS();
+                //css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
+
+                // Null check to fix error that triggers when loading PDF's in browser
+                //if(document.head != null)
+                //{
+                //    document.head.appendChild(css_load_blocker);
+                //}
+
+
+
+                //// This enabled check can likely be removed in the future
+                //// Keep for now in case we need to revert the earlier enabled check
+                //browser.storage.local.get({
+                //    enable_plugin: 1,
+                //    domainsettingsdb: {}
+                //}, function(items) {
+
+                    //if(items.enable_plugin)
+                    //{
+                        // Plugin is enabled
+
+                        if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
+                        {
+                            // Create stylesheet that will contain our filtering CSS (if any is necessary)
+                            filter_sheet = document.createElement('style');
+                            filter_sheet.className = "__css_exfil_protection_filtered_styles";
+                            filter_sheet.innerText = "";
+                            document.head.appendChild(filter_sheet);
+                        }
+
+                        // Increment once before we scan, just in case decrement is called too quickly
+                        incrementSanitize();
+
+                        scan_css();
+
+                        // MG Commenting for now due to performance issues
+                        // monitor document for delayed CSS injection
+                        //observer.observe(document, observer_config);
+
+                    // Part of old if code block above, likely can be removed
+                    //}
+                    //else
+                    //{
+                    //    // Plugin is disabled... enable page without sanitizing
+                    //    //css_load_blocker.disabled = true;
+                    //    //css_load_blocker.parentNode.removeChild(css_load_blocker);
+
+                    //    // disable icon
+                    //    browser.runtime.sendMessage('disabled');
+                    //}
+                //});
+            }
+            else if(items.domainsettingsdb[domain] == DOMAIN_SETTINGS_NO_SCAN_NO_SANITIZE)
+            {
+                DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_NO_SCAN_NO_SANITIZE;
+
+                // Zero out badge
+                browser.runtime.sendMessage(block_count.toString());
+
+                // disable icon
+                browser.runtime.sendMessage('disabled');
+            }
         }
         else
         {

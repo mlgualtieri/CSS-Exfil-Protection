@@ -1,20 +1,16 @@
 {
   "manifest_version": 2,
   "name": "__MSG_appName__",
-  "version": "1.0.17",
+  "version": "1.1.0",
   "description": "__MSG_appDesc__",
-  "default_locale" : "en",
-  "name": "__MSG_appName__",
-  "version": "1.0.18",
-  "description": "__MSG_appDesc__",
-  "default_locale" : "en",
 
   "content_security_policy": "default-src 'self'",
 
   "permissions": [
     "http://*/",
     "https://*/",
-    "storage"
+    "storage",
+    "tabs"
   ],
 
   "homepage_url": "https://www.mike-gualtieri.com/css-exfil-vulnerability-tester",

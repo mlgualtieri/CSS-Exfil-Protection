@@ -50,6 +50,68 @@ function restore_options()
   });
 }
 
+
+function update_domainsettings()
+{
+	chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
+        let tab    = tabs[0];
+        let url    = new URL(tab.url);
+        let domain = url.hostname;
+ 
+        // Load stored domain settings data
+        chrome.storage.local.get({
+            domainsettingsdb: {}
+        }, function(items) {
+
+            //let items.domainsettingsdb = items.domainsettingsdb;
+            let domainsetting = document.getElementById('domainsetting').value;
+
+            if(domainsetting == 0)
+            {
+                // Remove key if set to default
+                delete items.domainsettingsdb[domain];
+            }
+            else
+            {
+                items.domainsettingsdb[domain] = document.getElementById('domainsetting').value;
+            }
+        
+            // Write domain settings data to disk
+            chrome.storage.local.set({
+                domainsettingsdb: items.domainsettingsdb
+            }, function() {});
+        });
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', restore_options);
 document.getElementById('enable_plugin').addEventListener('click', save_options);
+document.getElementById('domainsetting').addEventListener('change', update_domainsettings);
+
+
+// Update domain span with active tab domain name
+// Requires "tabs" permission
+// Also update any previously written settings
+chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
+    let tab    = tabs[0];
+    let url    = new URL(tab.url);
+    let domain = url.hostname;
+    document.getElementById('thedomain').innerText = domain;
+
+    // update domain setting
+
+    // Load stored domain settings data
+    chrome.storage.local.get({
+        domainsettingsdb: {}
+    }, function(items) {
+
+        if(domain in items.domainsettingsdb)
+        {
+            document.getElementById('domainsetting').value = items.domainsettingsdb[domain];
+            //console.log(items.domainsettingsdb);
+        }
+    });
+
+});
 

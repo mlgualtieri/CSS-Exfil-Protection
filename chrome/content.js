@@ -1,3 +1,20 @@
+// Set up message listener for background.js
+// Due to Chrome 85 changes, cross domain CSS requests 
+// need to be handled in background.js
+chrome.runtime.onMessage.addListener(function(response) {
+	//console.log(response);
+
+    if( (typeof response.responseText !== "undefined") && 
+        (typeof response.url !== "undefined") )
+    {
+        //console.log(response.responseText);
+        handleCrossDomainCSS(response.url, response.responseText);
+    }
+
+    // indicate async listening
+	return true;
+});
+
 
 // Only scan single stylesheet
 function scan_css_single(css_stylesheet)
@@ -56,14 +73,6 @@ function scan_css()
 
         if(rules == null)
         {
-            // Original codeblock... for removal
-            /*
-            // Retrieve and parse cross-domain stylesheet
-            //console.log("Cross domain stylesheet: "+ sheets[i].href);
-            incrementSanitize();
-            getCrossDomainCSS(sheets[i]);
-            */
-
             if(sheets[i].href == null)
             {
                 // If we reach here it's due to a CSS load timing error
@@ -147,16 +156,6 @@ function handleImportedCSS(rules)
                 {
                     // Parse imported cross domain sheet
                     //console.log("Imported Cross Domain CSS...");
-
-                    //Debug: for removal
-                    /*
-                    console.log(rules[r]);
-                    console.log(rules[r].styleSheet);
-                    for (var property in rules[r]) {
-                        console.log( property + ': ' + rules[r][property]+'; ' );
-                    }
-                    */
-
                     getCrossDomainCSS(rules[r].styleSheet);
                 }
                 else
@@ -297,6 +296,22 @@ function getCrossDomainCSS(orig_sheet)
         }
     }
 
+
+    // test message receive from background
+    // here we will want to send the URL and do xhr in background
+    //chrome.runtime.sendMessage({url: url}, function(response) {
+    //	      console.log("resp2 "+ response);
+    //});
+
+    
+    // Track URL's being scanned and their associated original stylesheet
+    cross_domain_sheet_hash[ window.btoa(url) ] = orig_sheet;
+
+    // Send url to background.js to perform cross-domain xhr request
+    chrome.runtime.sendMessage({url: url});
+
+// Will be eliminated for Chrome 85 and migrated to handleCrossDomainCSS() -- pending removal
+/***************
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.onreadystatechange = function() 
@@ -364,28 +379,6 @@ function getCrossDomainCSS(orig_sheet)
             //rules = getCSSRules(sheets[ sheets.length - 1]);
             rules = getCSSRules(sheet.sheet);
 
-            /*
-            // MG: Old code, for removal
-            handleImportedCSS(rules);
-
-            var _selectors = parseCSSRules(rules);
-            filter_css(_selectors[0], _selectors[1]);
-
-            // Remove stylesheet
-            sheet.disabled = true;
-            sheet.parentNode.removeChild(sheet);
-
-            
-            if(checkCSSDisabled(orig_sheet))
-            {
-                enableCSS(orig_sheet);
-            }
-
-            decrementSanitize();
-            
-            return rules;
-            */
-
 
             // if rules is null is likely means we triggered a 
             // timing error where the new CSS sheet isn't ready yet
@@ -448,7 +441,136 @@ function getCrossDomainCSS(orig_sheet)
         }
     }
     xhr.send();
+******************/
 }
+
+
+
+function handleCrossDomainCSS(url, xhr_responseText)
+{
+	var rules;
+    var orig_sheet = cross_domain_sheet_hash[ window.btoa(url) ];
+
+
+    // Create stylesheet from remote CSS
+    var sheet = document.createElement('style');
+    sheet.innerText = xhr_responseText;
+
+    // Get all import rules
+    var matches = xhr_responseText.match( /@import.*?;/g );
+    var replaced = xhr_responseText;
+
+    // Get URL path of remote stylesheet (url minus the filename)
+    var _a  = document.createElement("a");
+    _a.href = url;
+    var _pathname = _a.pathname.substring(0, _a.pathname.lastIndexOf('/')) + "/";
+    var import_url_path = _a.origin + _pathname;
+
+    // Scan through all import rules
+    // if calling a relative resource, edit to include the original URL path
+    if(matches != null)
+    {
+        for(var i=0; i < matches.length; i++)
+        {
+            // Only run if import is not calling a remote http:// or https:// resource
+            if( (matches[i].indexOf('://') === -1) )
+            {
+                // Get file/path text from import rule (first text that's between quotes or parentheses)
+                var import_file = matches[i].match(/['"\(](.*?)['"\)]/g);
+
+                if(import_file != null)
+                {
+                    if(import_file.length > 0)
+                    {
+                        var _import_file = import_file[0];
+
+                        // Remove quotes and parentheses
+                        _import_file = _import_file.replace(/['"\(\)]/g,'');
+
+                        // Trim whitespace
+                        _import_file = _import_file.trim();
+
+                        // Remove any URL parameters
+                        _import_file = _import_file.split("?")[0];
+
+                        // Replace filename with full url path
+                        var regex = new RegExp(_import_file);
+                        replaced  = replaced.replace(regex, import_url_path + _import_file);
+                    }
+                }
+            }
+        }
+    }
+
+    // Add CSS to sheet and append to head so we can scan the rules
+    sheet.innerText = replaced;
+    document.head.appendChild(sheet);
+    
+
+    // MG: this approach to retrieve the last inserted stylesheet sometimes fails, 
+    // instead get the stylesheet directly from the temporary object (sheet.sheet)
+    //var sheets = document.styleSheets;
+    //rules = getCSSRules(sheets[ sheets.length - 1]);
+    rules = getCSSRules(sheet.sheet);
+
+
+    // if rules is null is likely means we triggered a 
+    // timing error where the new CSS sheet isn't ready yet
+    if(rules == null)
+    {
+        // Keep checking every 10ms until rules have become available
+        setTimeout(function checkRulesInit() { 
+            //rules = getCSSRules(sheets[ sheets.length - 1]);
+            rules = getCSSRules(sheet.sheet);
+                
+            if(rules == null)
+            {
+                setTimeout(checkRulesInit, 10);
+            }
+            else
+            {
+                handleImportedCSS(rules);
+
+                var _selectors = parseCSSRules(rules);
+                filter_css(_selectors[0], _selectors[1]);
+
+                // Remove tmp stylesheet
+                sheet.disabled = true;
+                sheet.parentNode.removeChild(sheet);
+
+                if(checkCSSDisabled(orig_sheet))
+                {
+                    enableCSS(orig_sheet);
+                }
+                decrementSanitize();
+                return rules;
+            }
+
+        }, 10);
+    }
+    else
+    {
+        handleImportedCSS(rules);
+
+        var _selectors = parseCSSRules(rules);
+        filter_css(_selectors[0], _selectors[1]);
+
+        // Remove tmp stylesheet
+        sheet.disabled = true;
+        sheet.parentNode.removeChild(sheet);
+
+        if(checkCSSDisabled(orig_sheet))
+        {
+            enableCSS(orig_sheet);
+        }
+        decrementSanitize();
+        return rules;
+    }
+
+}
+
+
+
 
 
 
@@ -457,23 +579,25 @@ function filter_css(selectors, selectorcss)
     // Loop through found selectors and modify CSS if necessary
     for(s in selectors)
     {
-        if( selectorcss[s].indexOf('background') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { background-image:none !important; }", filter_sheet.sheet.cssRules.length);
-        }
-        if( selectorcss[s].indexOf('list-style') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
-        }
-        if( selectorcss[s].indexOf('cursor') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
-        }
-        if( selectorcss[s].indexOf('content') !== -1 )
-        {
-            filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
-        }
-
+        if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
+		{
+        	if( selectorcss[s].indexOf('background') !== -1 )
+        	{
+        	    filter_sheet.sheet.insertRule( selectors[s] +" { background-image:none !important; }", filter_sheet.sheet.cssRules.length);
+        	}
+        	if( selectorcss[s].indexOf('list-style') !== -1 )
+        	{
+        	    filter_sheet.sheet.insertRule( selectors[s] +" { list-style: inherit !important; }", filter_sheet.sheet.cssRules.length);
+        	}
+        	if( selectorcss[s].indexOf('cursor') !== -1 )
+        	{
+        	    filter_sheet.sheet.insertRule( selectors[s] +" { cursor: auto !important; }", filter_sheet.sheet.cssRules.length);
+        	}
+        	if( selectorcss[s].indexOf('content') !== -1 )
+        	{
+        	    filter_sheet.sheet.insertRule( selectors[s] +" { content: normal !important; }", filter_sheet.sheet.cssRules.length);
+        	}
+		}
         // Causes performance issue if large amounts of resources are blocked, just use when debugging
         //console.log("CSS Exfil Protection blocked: "+ selectors[s]);
 
@@ -509,10 +633,13 @@ function checkCSSDisabled(_sheet)
 }
 function disableAndRemoveCSS(_sheet)
 {
-    _sheet.disabled = true;
-    if(_sheet.parentNode != null)
+    if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
     {
-        _sheet.parentNode.removeChild(_sheet);
+        _sheet.disabled = true;
+        if(_sheet.parentNode != null)
+        {
+            _sheet.parentNode.removeChild(_sheet);
+        }
     }
 }
 
@@ -551,6 +678,16 @@ var block_count       = 0;      // Number of blocked CSSRules
 var seen_url          = [];     // Keep track of scanned cross-domain URL's
 var seen_hash         = {};
 var disabled_css_hash = {};     // Keep track if the CSS was disabled before sanitization
+var cross_domain_sheet_hash = {}; // Keep track of cross domain stylesheets while they are being scanned
+
+// Human readable settings errors
+var DOMAIN_SETTINGS_DEFAULT             = 0;
+var DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE = 1;
+var DOMAIN_SETTINGS_NO_SCAN_NO_SANITIZE = 2;
+
+// We will store the current domain setting here
+var DOMAIN_SETTINGS_CURRENT = 0;
+
 
 //var check_setBlockingCSS    = false;    // We only need to add and remove the blocking CSS code once
 //var check_removeBlockingCSS = false;    // These vars check the state of the calls
@@ -664,76 +801,120 @@ var observer_config = { attributes: true, childList: true, subtree: true, charac
 window.addEventListener("DOMContentLoaded", function() {
 
     chrome.storage.local.get({
-        enable_plugin: 1
+        enable_plugin: 1,
+		domainsettingsdb: {}
     }, function(items) {
 
 	    if(items.enable_plugin == 1)
         {
-            // Check if the CSS sheet is disabled by default
-            for (var i=0; i < document.styleSheets.length; i++) 
-	        {
-                //console.log("CSS sheet: "+ document.styleSheets[i].href);
-                //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
-                //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
-                disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
-            }
+            let domain = window.location.hostname;
 
-            // Create temporary stylesheet that will block early loading of resources we may want to block
-            css_load_blocker  = document.createElement('style');
-            css_load_blocker.innerText = buildContentLoadBlockerCSS();
-            css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
-
-            // Null check to fix error that triggers when loading PDF's in browser
-            if(document.head != null)
+            // Undefined means domain is using default settings
+            // Continue if default or just scanning
+            if( (typeof items.domainsettingsdb[domain] === "undefined") ||
+                (items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE) )
             {
-                document.head.appendChild(css_load_blocker);
-            }
+            	// Zero out badge
+            	chrome.extension.sendMessage(block_count.toString());
 
-            // Zero out badge
-            chrome.extension.sendMessage(block_count.toString());
 
-            chrome.storage.local.get({
-                enable_plugin: 1
-            }, function(items) {
-
-	            if(items.enable_plugin == 1)
+                if(items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE)
                 {
-                    // Create stylesheet that will contain our filtering CSS (if any is necessary)
-                    filter_sheet = document.createElement('style');
-                    filter_sheet.className = "__css_exfil_protection_filtered_styles";
-                    filter_sheet.innerText = "";
-                    document.head.appendChild(filter_sheet);
+                    DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE;
 
-                    // Increment once before we scan, just in case decrement is called too quickly
-                    incrementSanitize();
-
-                    scan_css();
-
-                    // monitor document for delayed CSS injection
-                    //observer.observe(document, observer_config);
-                    
-                    // ensure icon is enabled
-                    chrome.runtime.sendMessage('enabled');
+                    // use reenabled icon in this state
+            	    chrome.runtime.sendMessage('reenabled');
                 }
                 else
-	            {
-                    // This else likely doesn't get run anymore 
-                    // Can likely comment out and later remove
+                {
+            	    // ensure icon is enabled
+            	    chrome.runtime.sendMessage('enabled');
+                }
 
-                    //console.log("Disabling CSS Exfil Protection");
-                    css_load_blocker.disabled = true;
-                    css_load_blocker.parentNode.removeChild(css_load_blocker);
 
-                    // disable icon
-                    chrome.runtime.sendMessage('disabled');
-	            }
-            });
+            	// Check if the CSS sheet is disabled by default
+            	for (var i=0; i < document.styleSheets.length; i++) 
+	        	{
+            	    //console.log("CSS sheet: "+ document.styleSheets[i].href);
+            	    //console.log("CSS Disabled State: "+ document.styleSheets[i].disabled);
+            	    //console.log("Base64: "+ window.btoa(document.styleSheets[i].href));
+            	    disabled_css_hash[ window.btoa(document.styleSheets[i].href) ] = document.styleSheets[i].disabled;
+            	}
+
+                if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
+                {
+            	    // Create temporary stylesheet that will block early loading of resources we may want to block
+            	    css_load_blocker  = document.createElement('style');
+            	    css_load_blocker.innerText = buildContentLoadBlockerCSS();
+            	    css_load_blocker.className = "__tmp_css_exfil_protection_load_blocker";
+
+            	    // Null check to fix error that triggers when loading PDF's in browser
+            	    if(document.head != null)
+            	    {
+            	        document.head.appendChild(css_load_blocker);
+            	    }
+                }
+
+
+                //// This enabled check can likely be removed in the future
+                //// Keep for now in case we need to revert the earlier enabled check
+            	//chrome.storage.local.get({
+            	//    enable_plugin: 1
+            	//}, function(items) {
+
+	        	//    if(items.enable_plugin == 1)
+            	//    {
+
+                        if(DOMAIN_SETTINGS_CURRENT == DOMAIN_SETTINGS_DEFAULT)
+						{
+            	        	// Create stylesheet that will contain our filtering CSS (if any is necessary)
+            	        	filter_sheet = document.createElement('style');
+            	        	filter_sheet.className = "__css_exfil_protection_filtered_styles";
+            	        	filter_sheet.innerText = "";
+            	        	document.head.appendChild(filter_sheet);
+						}
+
+            	        // Increment once before we scan, just in case decrement is called too quickly
+            	        incrementSanitize();
+
+            	        scan_css();
+
+            	        // monitor document for delayed CSS injection
+            	        //observer.observe(document, observer_config);
+            	        
+
+                    // Part of old if code block above, likely can be removed
+            	    //}
+            	    //else
+	        	    //{
+            	    //    // This else likely doesn't get run anymore 
+            	    //    // Can likely comment out and later remove
+
+            	    //    //console.log("Disabling CSS Exfil Protection");
+            	    //    css_load_blocker.disabled = true;
+            	    //    css_load_blocker.parentNode.removeChild(css_load_blocker);
+
+            	    //    // disable icon
+            	    //    chrome.runtime.sendMessage('disabled');
+	        	    //}
+            	//});
+			}
+            else if(items.domainsettingsdb[domain] == DOMAIN_SETTINGS_NO_SCAN_NO_SANITIZE)
+            {
+                DOMAIN_SETTINGS_CURRENT = DOMAIN_SETTINGS_NO_SCAN_NO_SANITIZE;
+
+                // Zero out badge
+                chrome.runtime.sendMessage(block_count.toString());
+
+                // disable icon
+                chrome.runtime.sendMessage('disabled');
+            }
         }
         else
         {
             // Plugin is disabled... enable page without sanitizing
             // disable icon
-            browser.runtime.sendMessage('disabled');
+            chrome.runtime.sendMessage('disabled');
         }
     });
 
