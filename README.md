@@ -1,3 +1,10 @@
+> [!NOTE]
+> **CSS Exfil Protection Deprecated**
+> 
+> I have not been able to dedicate time to updating the CSS Exfil Protection browser extension for several years; therefore, this project is now considered deprecated. Due to Google Chrome's migration to Manifest V3, it is no longer technically feasible to provide the same type of code scanning required for this extension. As of this writing, the extension still functions in Mozilla Firefox and will continue to be offered as a Firefox extension as long as it remains operational. No new functionality is planned at this time.
+
+---
+
 # CSS Exfil Protection
 
 This is the official repository for the CSS Exfil Protection plugins for Chrome and Firefox.
