@@ -604,7 +604,7 @@ function filter_css(selectors, selectorcss)
         // Update background.js with bagde count
         block_count++;
     }
-    chrome.extension.sendMessage(block_count.toString());
+    chrome.runtime.sendMessage(block_count.toString());
 }
 
 
@@ -815,7 +815,7 @@ window.addEventListener("DOMContentLoaded", function() {
                 (items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE) )
             {
             	// Zero out badge
-            	chrome.extension.sendMessage(block_count.toString());
+            	chrome.runtime.sendMessage(block_count.toString());
 
 
                 if(items.domainsettingsdb[domain] == DOMAIN_SETTINGS_DO_SCAN_NO_SANITIZE)
